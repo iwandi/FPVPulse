@@ -1,0 +1,48 @@
+﻿# =========================
+# Build outputs
+# =========================
+**/[Bb]in/
+**/[Oo]bj/
+
+# =========================
+# Visual Studio / VS Code
+# =========================
+.vs/
+*.user
+*.suo
+*.sln.docstates
+.vscode/
+
+# =========================
+# ASP.NET Core / Blazor
+# =========================
+appsettings.Development.json
+appsettings.*.json   # (if you use environment-specific secrets)
+Properties/launchSettings.json
+
+# =========================
+# NuGet
+# =========================
+packages/
+*.nupkg
+*.snupkg
+
+# =========================
+# Node / frontend (if you use npm in Blazor WASM)
+# =========================
+node_modules/
+wwwroot/lib/
+
+# =========================
+# Publishing / deployment
+# =========================
+publish/
+out/
+wwwroot/dist/
+wwwroot/build/
+
+# =========================
+# Rider (if you or teammates use it)
+# =========================
+.idea/
+*.sln.iml
