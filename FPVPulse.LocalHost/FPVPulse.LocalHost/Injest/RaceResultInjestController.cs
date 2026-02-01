@@ -1,4 +1,5 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using FPVPulse.Ingest;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 
 namespace FPVPulse.LocalHost.Injest
@@ -7,41 +8,49 @@ namespace FPVPulse.LocalHost.Injest
     [ApiController]
     public class PilotResultInjestController : Controller
     {
-        Dictionary<string, Dictionary<string, string>> echoStorrage = new Dictionary<string, Dictionary<string, string>>();
+        private readonly InjestQueue queue;
+        private readonly InjestData data;
+
+        public PilotResultInjestController(InjestQueue queue, InjestData data)
+        {
+            this.queue = queue;
+            this.data = data;
+        }
 
         [HttpGet("{injestRaceId}/result/{injestPilotId}")]
-        public string? Get(string injestRaceId, string injestPilotId)
+        public ActionResult<InjestPilotResult> Get(string injestRaceId, string injestPilotId)
         {
-            if (string.IsNullOrWhiteSpace(injestRaceId) || string.IsNullOrWhiteSpace(injestRaceId))
-            {
-                throw new ArgumentNullException();
-            }
+            if (string.IsNullOrWhiteSpace(injestRaceId))
+                return BadRequest("Missing injestRaceId.");
 
-            if (echoStorrage.TryGetValue(injestRaceId, out var raceResults) &&
-                raceResults.TryGetValue(injestPilotId, out var value))
-            {
-                return value;
-            }
-            return null;
+            if (string.IsNullOrWhiteSpace(injestPilotId))
+                return BadRequest("Missing injestPilotId.");
+
+            var result = data.GetPilotResult(injestRaceId, injestPilotId);
+            if (result == null)
+                return NotFound();
+
+            return result;
         }
 
         [HttpPut("{injestRaceId}/result/{injestPilotId}")]
-        public void Put(string injestRaceId, string injestPilotId, [FromBody] string value)
+        public async Task<IActionResult> Put(string injestRaceId, string injestPilotId, [FromBody] InjestPilotResult result)
         {
-            if(string.IsNullOrWhiteSpace(injestRaceId) || string.IsNullOrWhiteSpace(injestRaceId))
-            {
-                throw new ArgumentNullException();
-            }
+            if (string.IsNullOrWhiteSpace(injestRaceId))
+                return BadRequest("Missing injestRaceId.");
+            if (string.IsNullOrWhiteSpace(injestPilotId))
+                return BadRequest("Missing injestPilotId.");
 
-            if (!echoStorrage.TryGetValue(injestRaceId, out var raceResults))
-            {
-                raceResults = new Dictionary<string, string>();
-                echoStorrage[injestRaceId] = raceResults;
-            }
-            else
-            {
-                echoStorrage[injestRaceId][injestPilotId] = value;
-            }
+            if (result == null)
+                return BadRequest("Failed to deserialize InjestPilotResult = null");
+
+            if (result.InjestRaceId != injestRaceId)
+                return BadRequest($"injestRaceId missamch {injestRaceId} != {result.InjestRaceId}");
+            if (result.InjestPilotId != injestPilotId)
+                return BadRequest($"injestRaceId missamch {injestPilotId} != {result.InjestPilotId}");
+
+            queue.Enqueue(result);
+            return Ok();
         }
     }
 }

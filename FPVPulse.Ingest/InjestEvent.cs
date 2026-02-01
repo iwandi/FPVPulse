@@ -13,8 +13,8 @@ namespace FPVPulse.Ingest
         public DateTime? StartDate { get; set; }
         public DateTime? EndDate { get; set; }
 
-        public string? currentInjestRaceId { get; set; }
-        public string? nextInjestRaceId { get; set; }
+        public string? CurrentInjestRaceId { get; set; }
+        public string? NextInjestRaceId { get; set; }
 
         public DateTime? NextRaceSheduledStartTime { get; set; }
     }

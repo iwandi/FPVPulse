@@ -1,6 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
-
-// For more information on enabling Web API for empty projects, visit https://go.microsoft.com/fwlink/?LinkID=397860
+using FPVPulse.Ingest;
 
 namespace FPVPulse.LocalHost.Injest
 {
@@ -8,34 +7,49 @@ namespace FPVPulse.LocalHost.Injest
     [ApiController]
     public class RaceInjestController : ControllerBase
     {
-        Dictionary<string, string> echoStorrage = new Dictionary<string, string>();
+        private readonly InjestQueue queue;
+        private readonly InjestData data;
+
+        public RaceInjestController(InjestQueue queue, InjestData data)
+        {
+            this.queue = queue;
+            this.data = data;
+        }
 
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            return echoStorrage.Keys;
+            return data.GetRaceIds();
         }
 
         [HttpGet("{injestRaceId}")]
-        public string Get(string injestRaceId)
+        public ActionResult<InjestRace> Get(string injestRaceId)
         {
             if (string.IsNullOrWhiteSpace(injestRaceId))
-            {
-                throw new ArgumentNullException(nameof(injestRaceId));
-            }
+                return BadRequest("Missing injestRaceId.");
 
-            if (echoStorrage.TryGetValue(injestRaceId, out var value))
-            {
-                return value;
-            }
-            return null;
+            var race = data.GetRace(injestRaceId);
+            if (race == null)
+                return NotFound();
+
+            return race;
         }
 
         // TODO : how to we structure the id mapping from the Injest ids to the acctual ids ?
         [HttpPut("{injestRaceId}")]
-        public void Put(string injestRaceId, [FromBody] string value)
+        public async Task<IActionResult> Put(string injestRaceId, [FromBody] InjestRace race)
         {
-            echoStorrage[injestRaceId] = value;
+            if(string.IsNullOrWhiteSpace(injestRaceId))
+                return BadRequest("Missing injestRaceId.");
+
+            if(race == null)
+                return BadRequest("Failed to deserialize InjestRace = null");
+
+            if(race.InjestRaceId != injestRaceId)
+                return BadRequest($"injestRaceId missamch {injestRaceId} != {race.InjestRaceId}");
+
+            queue.Enqueue(race);
+            return Ok();
         }
     }
 }

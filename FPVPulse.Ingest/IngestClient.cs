@@ -8,6 +8,7 @@ namespace FPVPulse.Ingest
         string injestId;
         string apiUrlRoot;
         string token;
+        System.Net.Http.Headers.AuthenticationHeaderValue tokenHeader;
 
         HttpClient httpClient = new HttpClient();
 
@@ -15,7 +16,9 @@ namespace FPVPulse.Ingest
         string RaceUrl;
         string PilotResultUrl;
 
-        public IngestClient(string injestId, string apiUrlRoot, string token, HttpClient client = null)
+        JsonSerializerSettings jsonSerializerSettings;
+
+        public IngestClient(string injestId, string apiUrlRoot, string token, HttpClient? client = null)
         {
             this.injestId = injestId;
             this.apiUrlRoot = apiUrlRoot;
@@ -24,6 +27,13 @@ namespace FPVPulse.Ingest
                 httpClient = client;
             else
                 client = new HttpClient();
+
+            tokenHeader = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", token);
+
+            jsonSerializerSettings = new JsonSerializerSettings
+            {
+                NullValueHandling = NullValueHandling.Ignore
+            };
 
             BuildUrls();
         }
@@ -35,31 +45,61 @@ namespace FPVPulse.Ingest
             PilotResultUrl = $"{apiUrlRoot}/injest/race/";
         }
 
-        public async Task PutEvent(InjestEvent injestEvent)
+        HttpRequestMessage BuildRequest<T>(T data, string url) where T : class
         {
-            var url = string.Join(EventUrl, injestEvent.InjestEventId);
-            var json = JsonConvert.SerializeObject(injestEvent);
+            var json = JsonConvert.SerializeObject(data, jsonSerializerSettings);
             var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await httpClient.PutAsync(url, content);
-            response.EnsureSuccessStatusCode();
+            var request = new HttpRequestMessage(HttpMethod.Put, url)
+            {
+                Content = content,
+            };
+            //request.Headers.Authorization = tokenHeader;
+            //request.Headers.Add("Injest-ID", injestId);
+
+            Console.WriteLine(url);
+            Console.WriteLine(json);
+
+            return request;
         }
 
-        public async Task PutRace(InjestRace injestRace)
+        public async Task<HttpResponseMessage> PutEvent(InjestEvent injestEvent)
         {
-            var url = string.Join(EventUrl, injestRace.InjestRaceId);
-            var json = JsonConvert.SerializeObject(injestRace);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await httpClient.PutAsync(url, content);
-            response.EnsureSuccessStatusCode();
+            if (string.IsNullOrWhiteSpace(injestEvent.InjestEventId))
+            {
+                Console.WriteLine("Error no valid ids");
+            }
+
+            var url = string.Concat(EventUrl, injestEvent.InjestEventId);
+            var request = BuildRequest(injestEvent, url);
+            var response = await httpClient.SendAsync(request);
+            return response.EnsureSuccessStatusCode();
         }
 
-        public async Task PilotResult(InjestPilotResult injestPilotResult)
+        public async Task<HttpResponseMessage> PutRace(InjestRace injestRace)
         {
-            var url = string.Join(EventUrl, injestPilotResult.InjestRaceId, "/result/", injestPilotResult.InjestPilotId);
-            var json = JsonConvert.SerializeObject(injestPilotResult);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-            var response = await httpClient.PutAsync(url, content);
-            response.EnsureSuccessStatusCode();
+            if(string.IsNullOrWhiteSpace(injestRace.InjestEventId) ||
+                string.IsNullOrWhiteSpace(injestRace.InjestRaceId))
+            {
+                Console.WriteLine("Error no valid ids");
+            }
+
+            var url = string.Concat(RaceUrl, injestRace.InjestRaceId);
+            var request = BuildRequest(injestRace, url);
+            var response = await httpClient.SendAsync(request);
+            return response.EnsureSuccessStatusCode();
+        }
+
+        public async Task<HttpResponseMessage> PilotResult(InjestPilotResult injestPilotResult)
+        {
+            if (string.IsNullOrWhiteSpace(injestPilotResult.InjestRaceId))
+            {
+                Console.WriteLine("Error no valid ids");
+            }
+
+            var url = string.Concat(PilotResultUrl, injestPilotResult.InjestRaceId, "/result/", injestPilotResult.InjestPilotId);
+            var request = BuildRequest(injestPilotResult, url);
+            var response = await httpClient.SendAsync(request);
+            return response.EnsureSuccessStatusCode();
         }
     }
 }

@@ -10,10 +10,23 @@ namespace FPVPulse.Ingest.RaceVision
     public class FPVPulseReportProcessor
     {
         RaceVisionClient client;
+        IngestClient ingestClient;
 
-        public FPVPulseReportProcessor(RaceVisionClient client)
+        readonly object eventLock = new();
+        string currentEventId = String.Empty;
+        bool isValidEvent = false;
+
+        readonly object raceLock = new();
+        string currentRaceId = String.Empty;
+        bool isValidRace = false;
+
+        public bool IsValidEvent => isValidEvent;
+        public bool IsValidRace => isValidRace;
+
+        public FPVPulseReportProcessor(RaceVisionClient client, IngestClient ingestClient)
         {
             this.client = client;
+            this.ingestClient = ingestClient;
         }
 
         public void ProcessLiveTimeMessage(string type, string json)
@@ -50,46 +63,183 @@ namespace FPVPulse.Ingest.RaceVision
             var startTime = GetDateTime(jObject["Event"]?["StartDateTime"]);
             var endTime = GetDateTime(jObject["Event"]?["StartDateTime"]);
 
-            Console.WriteLine($"Event {eventName} (LID:{LID}) from {startTime} to {endTime}");
+            if (LID == null)
+            {
+                lock (eventLock)
+                {
+                    isValidEvent = false;
+                    currentEventId = String.Empty;
+                }
+                return;
+            }
+
+            lock (eventLock)
+            {
+                currentEventId = LID;
+                isValidEvent = true;
+            }
+
+            _ = Task.Run(async () => {
+                try
+                {
+                    _ = await ingestClient.PutEvent(new InjestEvent
+                    {
+                        InjestEventId = LID,
+                        InjestName = eventName,
+
+                        StartDate = startTime,
+                        EndDate = endTime,
+                    });
+                }
+                catch(Exception ex)
+                {
+                    Console.WriteLine($"Exception while trying to ingest event {LID}: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
+            });
         }
 
         void HandleLiveRaceTimeSync(string json)
         {
+            if (!IsValidEvent || !IsValidRace)
+                return;
+
             var jObject = JObject.Parse(json);
 
             var isTimerRunning = GetBool(jObject["IsTimerRunning"]);
             var timeUntilStart = GetTimeSpan(jObject["TimeUntilStart"]);
             var timeElapsed = GetTimeSpan(jObject["TimeUntilStart"]);
 
-            Console.WriteLine($"Timer running: {isTimerRunning}, Time until start: {timeUntilStart}, Time elapsed: {timeElapsed}");
+            _ = Task.Run(async () => {
+                try
+                {
+                    _ = await ingestClient.PutEvent(new InjestEvent
+                    {
+                        InjestEventId = currentEventId,
+                        NextRaceSheduledStartTime = isTimerRunning.HasValue && isTimerRunning.Value ? DateTime.UtcNow + (timeUntilStart ?? TimeSpan.Zero) : null,
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception while trying to ingest LiveRaceTime: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
+            });
+        }
+
+        RaceType RoundTypeToRaceType(int? value)
+        {
+            switch(value)
+            {
+                case 1:
+                    return RaceType.Practice;
+                case 2:
+                    return RaceType.Qualifying;
+                case 3:
+                    return RaceType.Mains;
+                default:
+                    return RaceType.Unknown;
+            }
+        }
+
+        RaceType RoundDisplayToRaceType(string? value)
+        {
+            if (value == null || value.Count() <= 0)
+                return RaceType.Unknown;
+
+            switch (value[0].ToString().ToUpper())
+            {
+                case "P":
+                    return RaceType.Practice;
+                case "Q":
+                    return RaceType.Qualifying;
+                case "M":
+                    return RaceType.Mains;
+                default:
+                    return RaceType.Unknown;
+            }
         }
 
         void HandleLiveRaceState(string json)
         {
+            if (!IsValidEvent)
+                return;
+
+            // TODO make this also a async lock
+            var eventId = currentEventId;
+
             var jObject = JObject.Parse(json);
 
+            // TODO : Detect RaceLayout
             var roundLID = GetInt(jObject["RoundLID"]);
             var raceLID = GetInt(jObject["RaceLID"]);
             var roundType = GetInt(jObject["RoundType"]);
             var raceName = GetString(jObject["RaceName"]);
             var raceOrderNumber = GetInt(jObject["RaceOrderNumber"]);
-            var raceClassInformation = GetString(jObject["RaceClassInformation"]);
+            //var raceClassInformation = GetString(jObject["RaceClassInformation"]);
+            //var roundLetterTypeOrderNumberDisplay = GetString(jObject["RoundLetterTypeOrderNumberDisplay"]);
 
-            if (raceLID.HasValue && raceLID > 0)
+            if (!raceLID.HasValue && raceLID <= 0)
             {
-                Task.Run(async () =>
+                lock (raceLock)
                 {
+                    isValidRace = false;
+                    currentRaceId = String.Empty;
+                }
+                return;
+            }
+            lock (raceLock)
+            {
+                currentRaceId = raceLID.ToString()!;
+                isValidRace = true;
+            }
+
+            _ = Task.Run(async () => {
+                try
+                {
+                    _ = await ingestClient.PutRace(new InjestRace
+                    {
+                        InjestEventId = eventId,
+                        InjestRaceId = raceLID.ToString(),
+                        InjestName = raceName,
+
+                        RaceType = RoundTypeToRaceType(roundType),
+                        FirstOrderPoistion = raceOrderNumber,
+                    });
+
+                    var nextRaceId = raceLID.Value + 1;
+
+                    _ = await ingestClient.PutEvent(new InjestEvent
+                    {
+                        InjestEventId = eventId,
+
+                        CurrentInjestRaceId = raceLID.ToString(),
+                        NextInjestRaceId = nextRaceId.ToString(),
+                    });
+
+                    // TODO Rate Limit requests
                     await RequestRaceEntryByRace(raceLID.Value);
                     await Task.Delay(1000);
-                    var nextRaceId = raceLID.Value + 1;
                     await RequestRaceEntryByRace(nextRaceId);
-                });
-            }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception while trying to ingest HandleLiveRaceState: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
+            });
         }
 
         void HandleLiveRaceEntry(string json)
         {
+            if (!IsValidEvent || !IsValidRace)
+                return;
+
+            // TODO make this also a async lock
+            var eventId = currentEventId;
+            var raceId = currentRaceId;
+
             var jObject = JObject.Parse(json);
+
+            var pilots = new List<InjestRacePilot>();
+            var results = new List<InjestPilotResult>();
 
             var raceEntries = jObject["LiveRaceEntries"] as JArray;
             if (raceEntries != null)
@@ -99,7 +249,7 @@ namespace FPVPulse.Ingest.RaceVision
                     var raceEntryLID = GetInt(raceEntry["RaceEntryLID"]);
                     var position = GetInt(raceEntry["Position"]);
                     var frequencyName = GetString(raceEntry["FrequencyName"]);
-                    var number = GetString(raceEntry["Number"]);
+                    //var number = GetString(raceEntry["Number"]);
                     var driverName = GetString(raceEntry["DriverName"]);
 
                     var isRacingStarted = GetBool(raceEntry["IsRacingStarted"]);
@@ -117,6 +267,7 @@ namespace FPVPulse.Ingest.RaceVision
                     var fastestLap = GetFloat(raceEntry["FastestLap"]);
                     var top2Consecutive = GetFloat(raceEntry["Top2Consecutive"]);
                     var top3Consecutive = GetFloat(raceEntry["Top3Consecutive"]);
+                    var sortAverageLap = GetFloat(raceEntry["SortAverageLap"]);
 
                     var liveEstimatedQualifyingPosition = GetInt(raceEntry["LiveEstimatedQualifyingPosition"]);
                     var startEstimatedQualifyingPosition = GetInt(raceEntry["StartEstimatedQualifyingPosition"]);
@@ -127,22 +278,112 @@ namespace FPVPulse.Ingest.RaceVision
                     var isFastestLapInRace = GetBool(raceEntry["IsFastestLapInRace"]);
                     var isFastestHoleShotInRace = GetBool(raceEntry["IsFastestHoleShotInRace"]);
 
+                    var lapsData = new List<InjestLap>();
                     var liveRaceEntryLaps = raceEntry["LiveRaceEntryLaps"] as JArray;
                     if (liveRaceEntryLaps != null)
                     {
+                        int i = 0;
                         foreach (var lap in liveRaceEntryLaps)
                         {
                             var lapTimeSeconds = GetFloat(lap["LapTimeSeconds"]);
                             var isBadLap = GetBool(lap["IsBadLap"]);
                             var isFastestLap = GetBool(lap["IsFastestLap"]);
+
+                            var injestLap = new InjestLap
+                            {
+                                LapNumber = i,
+                                LapTime = lapTimeSeconds,
+                                IsInvalid = isBadLap,                                
+                            };
+
+                            i++;
                         }
                     }
+
+                    var pilot = new InjestRacePilot
+                    {
+                        InjestPilotId = raceEntryLID.ToString(),
+
+                        InjestName = driverName,
+                        Channel = frequencyName,
+
+                        Position = position,
+                    };
+                    pilots.Add(pilot);
+
+                    if (!isRacingStarted.HasValue || !isRacingStarted.Value)
+                        continue;
+
+                    ResultFlag resultFlag = ResultFlag.None;
+                    if(isDisqualified.HasValue && isDisqualified.Value)
+                        resultFlag = ResultFlag.Disqualified;
+                    else if (isDidNotStart.HasValue && isDidNotStart.Value)
+                        resultFlag = ResultFlag.DidNotStart;
+                    else if (isFalseStart.HasValue && isFalseStart.Value)
+                        resultFlag = ResultFlag.FalseStart;
+                    else if (isDidNotFinish.HasValue && isDidNotFinish.Value)
+                        resultFlag = ResultFlag.DidNotFinish;
+
+
+                    var pilotResult = new InjestPilotResult
+                    {
+                        InjestRaceId = raceId,
+
+                        CurrentSector = currentSectorNumber,
+                        CurrentSplit = currentSplitNumber,
+
+                        LapCount = laps,
+                        TotalTime = time,
+                        TopLapTime = fastestLap,
+                        Top2ConsecutiveLapTime = top2Consecutive,
+                        Top3ConsecutiveLapTime = top3Consecutive,
+
+                        AverageLapTime = sortAverageLap,
+
+                        Flags = resultFlag,
+
+                        Laps = lapsData.ToArray(),
+                    };
+                    results.Add(pilotResult);
+
+                    if (!isComplete.HasValue || !isComplete.Value)
+                        continue;
+
+                    pilotResult.Position = position;
+                    pilotResult.IsComplited = true;
+
                 }
             }
+
+            _ = Task.Run(async () => {
+                try
+                {
+                    _ = await ingestClient.PutRace(new InjestRace
+                    {
+                        InjestEventId = eventId,
+                        InjestRaceId = raceId,
+
+                        Pilots = pilots.ToArray(),
+                    });
+                    foreach(var pilotResult in results)
+                    {
+                        _ = await ingestClient.PilotResult(pilotResult);
+                    }
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception while trying to ingest HandleLiveRaceState: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
+            });
         }
 
         void HandleLiveEstimatedPosition(string json)
         {
+            // TODO : add option in injest this
+
+            if (!IsValidEvent)
+                return;
+
             var jObject = JObject.Parse(json);
 
             var liveEstimatedPositions = jObject["LiveEstimatedPositions"] as JArray;
@@ -162,46 +403,93 @@ namespace FPVPulse.Ingest.RaceVision
 
         void HandleRaceEntryByRace(string json)
         {
+            if (!IsValidEvent)
+                return;
+
+            // TODO make this also a async lock
+            var eventId = currentEventId;
+
             var jObject = JObject.Parse(json);
 
             var race = jObject["Race"] as JObject;
 
             var raceLID = GetInt(race?["LID"]);
-            var roundLID = GetInt(race?["RoundLID"]);
+            //var roundLID = GetInt(race?["RoundLID"]);
 
-            var isComplete = GetBool(race?["IsComplete"]);
-            var startMicrosecondsUTC = GetInt(race?["StartMicrosecondsUTC"]);
-            var endMicrosecondsUTC = GetInt(race?["EndMicrosecondsUTC"]);
+            //var isComplete = GetBool(race?["IsComplete"]);
+            //var startMicrosecondsUTC = GetInt(race?["StartMicrosecondsUTC"]);
+            //var endMicrosecondsUTC = GetInt(race?["EndMicrosecondsUTC"]);
             var orderNumber = GetInt(race?["OrderNumber"]);
             var roundDisplay = GetString(race?["RoundDisplay"]);
             var raceInformation = GetString(race?["RaceInformation"]);
 
             var raceEntries = jObject["RaceEntries"] as JArray;
+            var pilots = new List<InjestRacePilot>();
+            //var result = new List<InjestPilotResult>();
+
             if (raceEntries != null)
             {
                 foreach (var raceEntry in raceEntries)
                 {
                     var raceEntryLID = GetInt(raceEntry["LID"]);
-                    var oderNumber = GetInt(raceEntry["OderNumber"]);
+                    //var entryOrderNumber = GetInt(raceEntry["OrderNumber"]);
                     var number = GetInt(raceEntry["Number"]);
-                    var driverLID = GetInt(raceEntry["DriverLID"]);
+                    //var driverLID = GetInt(raceEntry["DriverLID"]);
                     var driverName = GetString(raceEntry["DriverName"]);
-                    var driverLastName = GetString(raceEntry["DriverLastName"]);
+                    //var driverLastName = GetString(raceEntry["DriverLastName"]);
                     var frequencyName = GetString(raceEntry["FrequencyName"]);
                     var seedPosition = GetInt(raceEntry["SeedPosition"]);
 
-                    var finalPositionOverall = GetInt(raceEntry["FinalPositionOverall"]);
-                    //var startMicrosecondsUTC = raceEntry["StartMicrosecondsUTC"];
+                    //var finalPositionOverall = GetInt(raceEntry["FinalPositionOverall"]);
+                    //var entryStartMicrosecondsUTC = GetInt(raceEntry["StartMicrosecondsUTC"]);
 
-                    var completedLaps = GetInt(raceEntry["CompletedLaps"]);
-                    var completedTime = GetFloat(raceEntry["CompletedTime"]);
+                    //var completedLaps = GetInt(raceEntry["CompletedLaps"]);
+                    //var completedTime = GetFloat(raceEntry["CompletedTime"]);
 
-                    var fastestLap = GetFloat(raceEntry["FastestLap"]);
-                    var top2Consecutive = GetFloat(raceEntry["Top2Consecutive"]);
-                    var top3Consecutive = GetFloat(raceEntry["Top3Consecutive"]);
-                    var averageLap = GetFloat(raceEntry["AverageLap"]);
+                    //var fastestLap = GetFloat(raceEntry["FastestLap"]);
+                    //var top2Consecutive = GetFloat(raceEntry["Top2Consecutive"]);
+                    //var top3Consecutive = GetFloat(raceEntry["Top3Consecutive"]);
+                    //var averageLap = GetFloat(raceEntry["AverageLap"]);
+
+                    if(raceEntryLID == null || raceEntryLID <= 0)
+                        continue;
+
+                    pilots.Add(new InjestRacePilot
+                    {
+                        InjestPilotId = raceEntryLID.ToString(),
+
+                        InjestName = driverName,
+
+                        SeedPosition = seedPosition,
+                        StartPosition = number,
+
+                        Channel = frequencyName,
+                    });
+
+                    // TODO option to ingest pilot results
                 }
             }
+
+            _ = Task.Run(async () => {
+                try
+                {
+                    _ = await ingestClient.PutRace(new InjestRace
+                    {
+                        InjestEventId = eventId,
+                        InjestRaceId = raceLID.ToString(),
+                        InjestName = raceInformation,
+
+                        RaceType = RoundDisplayToRaceType(roundDisplay),
+                        FirstOrderPoistion = orderNumber,
+
+                        Pilots = pilots.ToArray(),
+                    });
+                }
+                catch (Exception ex)
+                {
+                    Console.WriteLine($"Exception while trying to ingest HandleLiveRaceState: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+                }
+            });
         }
 
         bool? GetBool(JToken? token)

@@ -1,4 +1,7 @@
 using FPVPulse.LocalHost.Components;
+using FPVPulse.LocalHost.Injest;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 
 namespace FPVPulse.LocalHost
 {
@@ -13,7 +16,16 @@ namespace FPVPulse.LocalHost
                 builder.Services.AddRazorComponents()
                     .AddInteractiveWebAssemblyComponents();
 
-                builder.Services.AddControllers();
+                builder.Services.AddSingleton<InjestProcessor>();
+                builder.Services.AddSingleton<InjestData>();
+                builder.Services.AddSingleton<InjestQueue>();
+
+                var mvcBuilder = builder.Services.AddControllers();
+
+                mvcBuilder.AddNewtonsoftJson(mvcBuilderOptions =>
+                {
+                    mvcBuilderOptions.SerializerSettings.NullValueHandling = Newtonsoft.Json.NullValueHandling.Ignore;
+                });
 
                 var app = builder.Build();
 

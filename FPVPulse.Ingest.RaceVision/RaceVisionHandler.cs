@@ -8,17 +8,15 @@ namespace FPVPulse.Ingest.RaceVision
     public class RaceVisionHandler
     {
         RaceVisionClient client;
-        IngestClient ingestClient;
 
         TaskCompletionSource<bool> onLogin;
         CancellationTokenSource onDisconnect;
 
         public event Action<string, string> OnMessageReceived;
 
-        public RaceVisionHandler(RaceVisionClient client, IngestClient ingestClient) 
+        public RaceVisionHandler(RaceVisionClient client) 
         {
             this.client = client;
-            this.ingestClient = ingestClient;
 
             Bind(client);
         }

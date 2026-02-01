@@ -1,5 +1,8 @@
-﻿using Microsoft.AspNetCore.Http;
+﻿using FPVPulse.Ingest;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+using System.Text;
 
 namespace FPVPulse.LocalHost.Injest
 {
@@ -7,38 +10,48 @@ namespace FPVPulse.LocalHost.Injest
     [ApiController]
     public class EventInjestController : Controller
     {
-        Dictionary<string, string> echoStorrage = new Dictionary<string, string>();
+        private readonly InjestQueue queue;
+        private readonly InjestData data;
+
+        public EventInjestController(InjestQueue queue, InjestData data)
+        {
+            this.queue = queue;
+            this.data = data;
+        }
 
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            return echoStorrage.Keys;
+            return data.GetEventIds();
         }
 
         [HttpGet("{injestEventId}")]
-        public string Get(string injestEventId)
+        public ActionResult<InjestEvent> Get(string injestEventId)
         {
             if (string.IsNullOrWhiteSpace(injestEventId))
-            {
-                throw new ArgumentNullException(nameof(injestEventId));
-            }
+                return BadRequest("Missing injestEventId.");
 
-            if (echoStorrage.TryGetValue(injestEventId, out var value))
-            {
-                return value;
-            }
-            return null;
+            var @event = data.GetEvent(injestEventId);
+            if (@event == null)
+                return NotFound();
+
+            return @event;
         }
 
         [HttpPut("{injestEventId}")]
-        public void Put(string injestEventId, [FromBody] string value)
+        public async Task<IActionResult> Put(string injestEventId, [FromBody] InjestEvent @event)
         {
             if (string.IsNullOrWhiteSpace(injestEventId))
-            {
-                throw new ArgumentNullException(nameof(injestEventId));
-            }
+                return BadRequest("Invalid injestEventId");
 
-            echoStorrage[injestEventId] = value;
+            if (@event == null)
+                return BadRequest("Invalid event data.");
+
+            if (@event.InjestEventId != injestEventId)
+                return BadRequest("Event ID in URL and body do not match.");
+
+            queue.Enqueue(@event);
+            return Ok();
         }
     }
 }

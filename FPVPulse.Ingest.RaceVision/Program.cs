@@ -44,8 +44,8 @@ namespace FPVPulse.Ingest.RaceVision
 
             var client = new RaceVisionClient(config.Key);
             var ingestClient = new IngestClient(config.ConnectionIPAddress, config.ApiUrlRoot, config.ApiToken);
-            var handler = new RaceVisionHandler(client, ingestClient);
-            var fpvPulse = new FPVPulseReportProcessor(client);
+            var handler = new RaceVisionHandler(client);
+            var fpvPulse = new FPVPulseReportProcessor(client, ingestClient);
 
             handler.OnMessageReceived += (type, json) =>
             {
