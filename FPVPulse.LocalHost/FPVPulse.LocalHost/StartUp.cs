@@ -1,8 +1,10 @@
 using FPVPulse.LocalHost.Components;
 using FPVPulse.LocalHost.Injest;
 using FPVPulse.LocalHost.Injest.Db;
+using FPVPulse.LocalHost.Signal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
+using Microsoft.EntityFrameworkCore;
 
 namespace FPVPulse.LocalHost
 {
@@ -17,10 +19,16 @@ namespace FPVPulse.LocalHost
                 builder.Services.AddRazorComponents()
                     .AddInteractiveWebAssemblyComponents();
 
+                builder.Services.AddSignalR();
+
                 builder.Services.AddDbContext<InjestDbContext>();
+
+                builder.Services.AddSingleton<ChangeSignaler>();
+
                 builder.Services.AddSingleton<InjestData>();
                 builder.Services.AddSingleton<InjestQueue>();
                 builder.Services.AddHostedService<InjestProcessor>();
+
 
                 var mvcBuilder = builder.Services.AddControllers();
 
@@ -53,11 +61,13 @@ namespace FPVPulse.LocalHost
                     .AddAdditionalAssemblies(typeof(FPVPulse.LocalHost.Client._Imports).Assembly);
 
                 app.MapControllers();
+                app.MapHub<ChangeHub>("/hubs/change");
 
                 using (var scope = app.Services.CreateScope())
                 {
                     var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
                     db.Database.EnsureCreated();
+                    db.Database.Migrate();
                 }
 
                 app.Run();
