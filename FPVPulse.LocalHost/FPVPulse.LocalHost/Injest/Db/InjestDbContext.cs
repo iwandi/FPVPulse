@@ -35,6 +35,10 @@ namespace FPVPulse.LocalHost.Injest.Db
                 .HasConversion(lapsConverter);
 
             modelBuilder.Entity<DbInjestRacePilot>()
+                .HasIndex(e => new { e.InjestId, e.InjestRaceId, e.InjestPilotId })
+                .IsUnique();
+
+            modelBuilder.Entity<DbInjestRacePilot>()
                  .HasKey(p => p.RacePilotId);
         }
     }
