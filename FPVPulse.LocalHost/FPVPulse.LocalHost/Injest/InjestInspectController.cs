@@ -1,6 +1,7 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using FPVPulse.Ingest;
 using FPVPulse.LocalHost.Injest.Db;
+using FPVPulse.LocalHost.Client;
 
 namespace FPVPulse.LocalHost.Injest
 {
@@ -35,6 +36,32 @@ namespace FPVPulse.LocalHost.Injest
             if(@event == null)
                 return NotFound();
             return @event;
+        }
+
+        [HttpGet("eventIndex/")]
+        public IEnumerable<IndexEntry> GetEventNames()
+        {
+            using var scope = serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+            return db.Events.Select(e => new IndexEntry
+            {
+                Id = e.EventId,
+                Name = e.InjestName,
+            }).ToArray();
+        }
+
+        [HttpGet("eventRacesIndex/{eventId}")]
+        public IEnumerable<IndexEntry> GetEventRaces(int eventId)
+        {
+            using var scope = serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+            return db.Races.Where(r => r.EventId == eventId).Select(r => new IndexEntry
+            {
+                Id = r.RaceId,
+                Name = r.InjestName,
+            }).ToArray();
         }
 
         [HttpGet("race/")]
