@@ -32,32 +32,32 @@ namespace FPVPulse.LocalHost.Injest.Db
         public bool Merge(InjestEvent @event)
         {
             bool changed = false;
-            if (@event.InjestName != null)
+            if (@event.InjestName != null && InjestName != @event.InjestName)
             {
                 InjestName = @event.InjestName;
                 changed = true;
             }
-            if (@event.StartDate != null)
+            if (@event.StartDate != null && StartDate != @event.StartDate)
             {
                 StartDate = @event.StartDate;
                 changed = true;
             }
-            if (@event.EndDate != null)
+            if (@event.EndDate != null && EndDate != @event.EndDate)
             {
                 EndDate = @event.EndDate;
                 changed = true;
             }
-            if (@event.CurrentInjestRaceId != null)
+            if (@event.CurrentInjestRaceId != null && CurrentInjestRaceId != @event.CurrentInjestRaceId)
             {
                 CurrentInjestRaceId = @event.CurrentInjestRaceId;
                 changed = true;
             }
-            if (@event.NextInjestRaceId != null)
+            if (@event.NextInjestRaceId != null && NextInjestRaceId != @event.NextInjestRaceId)
             {
                 NextInjestRaceId = @event.NextInjestRaceId;
                 changed = true;
             }
-            if (@event.NextRaceSheduledStartTime != null)
+            if (@event.NextRaceSheduledStartTime != null && NextRaceSheduledStartTime != @event.NextRaceSheduledStartTime)
             {
                 NextRaceSheduledStartTime = @event.NextRaceSheduledStartTime;
                 changed = true;

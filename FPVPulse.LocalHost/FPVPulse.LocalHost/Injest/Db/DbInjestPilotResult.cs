@@ -42,72 +42,72 @@ namespace FPVPulse.LocalHost.Injest.Db
         public bool Merge(InjestPilotResult pilotResult)
         {
             bool changed = false;
-            if (pilotResult.CurrentSector != null)
+            if (pilotResult.CurrentSector != null && CurrentSector != pilotResult.CurrentSector)
             {
                 CurrentSector = pilotResult.CurrentSector;
                 changed = true;
             }
-            if (pilotResult.CurrentSplit != null)
+            if (pilotResult.CurrentSplit != null && CurrentSplit != pilotResult.CurrentSplit)
             {
                 CurrentSplit = pilotResult.CurrentSplit;
                 changed = true;
             }
-            if (pilotResult.Position != null)
+            if (pilotResult.Position != null && Position != pilotResult.Position)
             {
                 Position = pilotResult.Position;
                 changed = true;
             }
-            if (pilotResult.StartTime != null)
+            if (pilotResult.StartTime != null && StartTime != pilotResult.StartTime)
             {
                 StartTime = pilotResult.StartTime;
                 changed = true;
             }
-            if (pilotResult.FinishTime != null)
+            if (pilotResult.FinishTime != null && FinishTime != pilotResult.FinishTime)
             {
                 FinishTime = pilotResult.FinishTime;
                 changed = true;
             }
-            if (pilotResult.LapCount != null)
+            if (pilotResult.LapCount != null && LapCount != pilotResult.LapCount)
             {
                 LapCount = pilotResult.LapCount;
                 changed = true;
             }
-            if (pilotResult.TotalTime != null)
+            if (pilotResult.TotalTime != null && TotalTime != pilotResult.TotalTime)
             {
                 TotalTime = pilotResult.TotalTime;
                 changed = true;
             }
-            if (pilotResult.TopLapTime != null)
+            if (pilotResult.TopLapTime != null && TopLapTime != pilotResult.TopLapTime)
             {
                 TopLapTime = pilotResult.TopLapTime;
                 changed = true;
             }
-            if (pilotResult.Top2ConsecutiveLapTime != null)
+            if (pilotResult.Top2ConsecutiveLapTime != null && Top2ConsecutiveLapTime != pilotResult.Top2ConsecutiveLapTime)
             {
                 Top2ConsecutiveLapTime = pilotResult.Top2ConsecutiveLapTime;
                 changed = true;
             }
-            if (pilotResult.Top3ConsecutiveLapTime != null)
+            if (pilotResult.Top3ConsecutiveLapTime != null && Top3ConsecutiveLapTime != pilotResult.Top3ConsecutiveLapTime)
             {
                 Top3ConsecutiveLapTime = pilotResult.Top3ConsecutiveLapTime;
                 changed = true;
             }
-            if (pilotResult.AverageLapTime != null)
+            if (pilotResult.AverageLapTime != null && AverageLapTime != pilotResult.AverageLapTime)
             {
                 AverageLapTime = pilotResult.AverageLapTime;
                 changed = true;
             }
-            if (pilotResult.IsComplited != null)
+            if (pilotResult.IsComplited != null && IsComplited != pilotResult.IsComplited)
             {
                 IsComplited = pilotResult.IsComplited;
                 changed = true;
             }
-            if (pilotResult.Flags != null)
+            if (pilotResult.Flags != null && Flags != pilotResult.Flags)
             {
                 Flags = pilotResult.Flags;
                 changed = true;
             }
-            if (pilotResult.Laps != null)
+            if (pilotResult.Laps != null && Laps != pilotResult.Laps)
             {
                 Laps = pilotResult.Laps;
                 changed = true;

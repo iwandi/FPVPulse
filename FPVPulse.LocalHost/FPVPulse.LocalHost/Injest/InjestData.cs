@@ -68,7 +68,9 @@ namespace FPVPulse.LocalHost.Injest
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
-            return db.Races.Find(raceId);
+            var race = db.Races.Find(raceId);
+            FillPilots(db, race);
+            return race;
         }
 
         public InjestRace? GetRace(string injestId, string injestRaceId)
@@ -76,8 +78,18 @@ namespace FPVPulse.LocalHost.Injest
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
-            return db.Races.FirstOrDefault(r => r.InjestId == injestId &&
+            var race = db.Races.FirstOrDefault(r => r.InjestId == injestId &&
                 r.InjestRaceId == injestRaceId);
+            FillPilots(db, race);
+            return race;
+        }
+
+        public void FillPilots(InjestDbContext db, DbInjestRace? race)
+        {
+            if (race != null)
+            {
+                race.Pilots = db.RacePilots.Where(r => r.RaceId == race.RaceId).ToArray();
+            }
         }
 
         public InjestPilotResult? GetPilotResult(int pilotResultId)

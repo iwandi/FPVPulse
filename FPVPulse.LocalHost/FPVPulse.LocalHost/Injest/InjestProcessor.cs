@@ -54,6 +54,7 @@ namespace FPVPulse.LocalHost.Injest
 
         async Task ProcessRace(InjestDbContext? db, string injestId, InjestRace race)
         {
+            bool hasChange = false;
             var existing = await db.Races.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                 e.InjestEventId == race.InjestEventId &&
                 e.InjestRaceId == race.InjestRaceId);
@@ -61,14 +62,32 @@ namespace FPVPulse.LocalHost.Injest
             {
                 existing = new DbInjestRace(injestId, race);
                 db.Races.Add(existing);
+                hasChange = true;
             }
             else
+                hasChange &= existing.Merge(race);
+
+            if (race.Pilots != null)
             {
-                if(!existing.Merge(race))
-                    return;
+                foreach (var pilot in race.Pilots)
+                {
+                    var existingPilot = await db.RacePilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+                        e.InjestPilotId == pilot.InjestPilotId &&
+                        e.InjestRaceId == existing.InjestRaceId);
+
+                    if (existingPilot == null)
+                    {
+                        existingPilot = new DbInjestRacePilot(injestId, existing, pilot);
+                        db.RacePilots.Add(existingPilot);
+                        hasChange = true;
+                    }
+                    else
+                        hasChange &= existingPilot.Merge(pilot);
+                }
             }
 
-            await db.SaveChangesAsync();
+            if(hasChange)
+                await db.SaveChangesAsync();
         }
 
         async Task ProcessPilotResult(InjestDbContext? db, string injestId, InjestPilotResult pilotResult)

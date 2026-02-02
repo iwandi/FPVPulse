@@ -34,27 +34,27 @@ namespace FPVPulse.LocalHost.Injest.Db
         public bool Merge(InjestRace race)
         {
             bool changed = false;
-            if (race.InjestName != null)
+            if (race.InjestName != null && InjestName != race.InjestName)
             {
                 InjestName = race.InjestName;
                 changed = true;
             }
-            if(race.RaceType != null)
+            if(race.RaceType != null && RaceType != race.RaceType)
             {
                 RaceType = race.RaceType;
                 changed = true;
             }
-            if(race.RaceLayout != null)
+            if(race.RaceLayout != null && RaceLayout != race.RaceLayout)
             {
                 RaceLayout = race.RaceLayout;
                 changed = true;
             }
-            if (race.FirstOrderPoistion != null)
+            if (race.FirstOrderPoistion != null && FirstOrderPoistion != race.FirstOrderPoistion)
             {
                 FirstOrderPoistion = race.FirstOrderPoistion;
                 changed = true;
             }
-            if (race.SecondOrderPosition != null)
+            if (race.SecondOrderPosition != null && SecondOrderPosition != race.SecondOrderPosition)
             {
                 SecondOrderPosition = race.SecondOrderPosition;
                 changed = true;
