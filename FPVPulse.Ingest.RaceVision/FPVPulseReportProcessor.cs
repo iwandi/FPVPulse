@@ -20,7 +20,9 @@ namespace FPVPulse.Ingest.RaceVision
         string currentRaceId = String.Empty;
         bool isValidRace = false;
 
-        public bool IsValidEvent => isValidEvent;
+        AutoScanState autoScan = new AutoScanState();
+
+		public bool IsValidEvent => isValidEvent;
         public bool IsValidRace => isValidRace;
 
         public FPVPulseReportProcessor(RaceVisionClient client, IngestClient ingestClient)
@@ -69,13 +71,17 @@ namespace FPVPulse.Ingest.RaceVision
                 {
                     isValidEvent = false;
                     currentEventId = String.Empty;
-                }
+					autoScan.Reset();
+				}
                 return;
             }
 
             lock (eventLock)
             {
-                currentEventId = LID;
+                if(currentEventId != LID)
+					autoScan.Reset();
+
+				currentEventId = LID;
                 isValidEvent = true;
             }
 
@@ -192,7 +198,7 @@ namespace FPVPulse.Ingest.RaceVision
                 isValidRace = true;
             }
 
-            _ = Task.Run(async () => {
+			_ = Task.Run(async () => {
                 try
                 {
                     _ = await ingestClient.PutRace(new InjestRace
@@ -215,11 +221,16 @@ namespace FPVPulse.Ingest.RaceVision
                         NextInjestRaceId = nextRaceId.ToString(),
                     });
 
-                    // TODO Rate Limit requests
-                    await RequestRaceEntryByRace(raceLID.Value);
+					autoScan.MarkRaceId(raceLID.Value, true, true);
+					if (autoScan.TryGetNextScanId(out var nextScanId))
+					{
+						_ = RequestRaceEntryByRace(nextScanId);
+					}
+					// TODO Rate Limit requests
+					/*await RequestRaceEntryByRace(raceLID.Value);
                     await Task.Delay(1000);
-                    await RequestRaceEntryByRace(nextRaceId);
-                }
+                    await RequestRaceEntryByRace(nextRaceId);*/
+				}
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Exception while trying to ingest HandleLiveRaceState: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
@@ -241,7 +252,7 @@ namespace FPVPulse.Ingest.RaceVision
             var pilots = new List<InjestRacePilot>();
             var results = new List<InjestPilotResult>();
 
-            var raceEntries = jObject["LiveRaceEntries"] as JArray;
+			var raceEntries = jObject["LiveRaceEntries"] as JArray;
             if (raceEntries != null)
             {
                 foreach (var raceEntry in raceEntries)
@@ -413,7 +424,18 @@ namespace FPVPulse.Ingest.RaceVision
 
             var race = jObject["Race"] as JObject;
             if (race == null)
-                return;
+            {
+                // Asume this is the auto scan result that is invalid
+                if (autoScan.IsScanActive)
+                {
+                    autoScan.MarkRaceId(autoScan.CurrentScanId, false, false);
+                    if (autoScan.TryGetNextScanId(out var nextScanId))
+					{
+						_ = RequestRaceEntryByRace(nextScanId);
+					}
+				}
+				return;
+            }
 
             var raceLID = GetInt(race?["LID"]);
             //var roundLID = GetInt(race?["RoundLID"]);
@@ -472,7 +494,7 @@ namespace FPVPulse.Ingest.RaceVision
                 }
             }
 
-            _ = Task.Run(async () => {
+			_ = Task.Run(async () => {
                 try
                 {
                     _ = await ingestClient.PutRace(new InjestRace
@@ -486,7 +508,14 @@ namespace FPVPulse.Ingest.RaceVision
 
                         Pilots = pilots.ToArray(),
                     });
-                }
+
+                    // Do not mark as valid as we do not know
+					autoScan.MarkRaceId(raceLID.Value, false, false);
+					if (autoScan.TryGetNextScanId(out var nextScanId))
+					{
+						_ = RequestRaceEntryByRace(nextScanId);
+					}
+				}
                 catch (Exception ex)
                 {
                     Console.WriteLine($"Exception while trying to ingest HandleLiveRaceState: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
@@ -561,6 +590,9 @@ namespace FPVPulse.Ingest.RaceVision
 
         public Task RequestRaceEntryByRace(int raceId)
         {
+            Task.Delay(100).Wait();
+
+			Console.WriteLine($"Reuest Race {raceId}");
             client.TransmitPacket("RaceEntryByRaceRequest", $"{{ \"RaceLID\": \"{raceId}\" }}");
 
             return Task.CompletedTask;
