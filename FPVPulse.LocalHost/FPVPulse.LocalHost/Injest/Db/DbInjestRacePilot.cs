@@ -27,6 +27,7 @@ namespace FPVPulse.LocalHost.Injest.Db
             InjestId = injestId;
             InjestRaceId = race.InjestRaceId;
 
+            InjestPilotId = racePilot.InjestPilotId;
             InjestName = racePilot.InjestName;
             SeedPosition = racePilot.SeedPosition;
             StartPosition = racePilot.StartPosition;
