@@ -1,5 +1,6 @@
 using FPVPulse.LocalHost.Components;
 using FPVPulse.LocalHost.Injest;
+using FPVPulse.LocalHost.Injest.Db;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 
@@ -16,6 +17,7 @@ namespace FPVPulse.LocalHost
                 builder.Services.AddRazorComponents()
                     .AddInteractiveWebAssemblyComponents();
 
+                builder.Services.AddSingleton<InjestDbContext>();
                 builder.Services.AddSingleton<InjestProcessor>();
                 builder.Services.AddSingleton<InjestData>();
                 builder.Services.AddSingleton<InjestQueue>();

@@ -7,8 +7,8 @@ namespace FPVPulse.LocalHost.Injest
     [ApiController]
     public class RaceInjestController : ControllerBase
     {
-        private readonly InjestQueue queue;
-        private readonly InjestData data;
+        readonly InjestQueue queue;
+        readonly InjestData data;
 
         public RaceInjestController(InjestQueue queue, InjestData data)
         {
@@ -16,10 +16,18 @@ namespace FPVPulse.LocalHost.Injest
             this.data = data;
         }
 
+        string GetInjestId()
+        {
+            string? injestId = Request.Headers["Injest-ID"].FirstOrDefault();
+            if (injestId == null)
+                injestId = "";
+            return injestId;
+        }
+
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            return data.GetRaceIds();
+            return data.GetRaceIds(GetInjestId());
         }
 
         [HttpGet("{injestRaceId}")]
@@ -28,7 +36,7 @@ namespace FPVPulse.LocalHost.Injest
             if (string.IsNullOrWhiteSpace(injestRaceId))
                 return BadRequest("Missing injestRaceId.");
 
-            var race = data.GetRace(injestRaceId);
+            var race = data.GetRace(GetInjestId(), injestRaceId);
             if (race == null)
                 return NotFound();
 
@@ -48,7 +56,7 @@ namespace FPVPulse.LocalHost.Injest
             if(race.InjestRaceId != injestRaceId)
                 return BadRequest($"injestRaceId missamch {injestRaceId} != {race.InjestRaceId}");
 
-            queue.Enqueue(race);
+            queue.Enqueue(GetInjestId(), race);
             return Ok();
         }
     }

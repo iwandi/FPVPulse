@@ -10,8 +10,8 @@ namespace FPVPulse.LocalHost.Injest
     [ApiController]
     public class EventInjestController : Controller
     {
-        private readonly InjestQueue queue;
-        private readonly InjestData data;
+        readonly InjestQueue queue;
+        readonly InjestData data;
 
         public EventInjestController(InjestQueue queue, InjestData data)
         {
@@ -19,10 +19,18 @@ namespace FPVPulse.LocalHost.Injest
             this.data = data;
         }
 
+        string GetInjestId()
+        {
+            string? injestId = Request.Headers["Injest-ID"].FirstOrDefault();
+            if (injestId == null)
+                injestId = "";
+            return injestId;
+        }
+
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            return data.GetEventIds();
+            return data.GetEventIds(GetInjestId());
         }
 
         [HttpGet("{injestEventId}")]
@@ -31,7 +39,7 @@ namespace FPVPulse.LocalHost.Injest
             if (string.IsNullOrWhiteSpace(injestEventId))
                 return BadRequest("Missing injestEventId.");
 
-            var @event = data.GetEvent(injestEventId);
+            var @event = data.GetEvent(GetInjestId(), injestEventId);
             if (@event == null)
                 return NotFound();
 
@@ -50,7 +58,7 @@ namespace FPVPulse.LocalHost.Injest
             if (@event.InjestEventId != injestEventId)
                 return BadRequest("Event ID in URL and body do not match.");
 
-            queue.Enqueue(@event);
+            queue.Enqueue(GetInjestId(), @event);
             return Ok();
         }
     }

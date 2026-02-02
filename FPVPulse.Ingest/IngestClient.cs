@@ -53,8 +53,8 @@ namespace FPVPulse.Ingest
             {
                 Content = content,
             };
-            //request.Headers.Authorization = tokenHeader;
-            //request.Headers.Add("Injest-ID", injestId);
+            request.Headers.Authorization = tokenHeader;
+            request.Headers.Add("Injest-ID", injestId);
 
             Console.WriteLine(url);
             Console.WriteLine(json);
