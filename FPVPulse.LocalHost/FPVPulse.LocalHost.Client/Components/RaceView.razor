@@ -1,0 +1,20 @@
+﻿@using FPVPulse.Ingest
+@* Remove @typeparam, use InjestRace directly *@
+
+<div class="race-display">
+    @if (Race != null)
+    {
+        <strong>@Race.InjestName</strong>
+        <span> - Type: @Race.RaceType</span>
+        <span> - Layout: @Race.RaceLayout</span>
+    }
+    else
+    {
+        <em>No race data.</em>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public InjestRace? Race { get; set; }
+}

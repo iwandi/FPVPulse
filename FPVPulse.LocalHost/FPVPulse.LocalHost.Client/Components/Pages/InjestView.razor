@@ -1,0 +1,159 @@
+﻿@page "/injest"
+@using FPVPulse.Ingest
+@using Microsoft.AspNetCore.SignalR.Client
+@rendermode InteractiveWebAssembly
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+
+<h3>Injest Events</h3>
+
+@if(events == null)
+{
+	<p>Loading events ...</p>
+}
+else if (!events.Any())
+{
+	<p>No events found.</p>
+}
+else
+{
+	<select @bind="CurrentEventId">
+		<option>-- Select an event --</option>
+		@foreach (var ev in events)
+		{
+			<option value="@ev.Id">@ev.Name</option>
+		})
+	</select>
+}
+
+@if (CurrentEventId != null)
+{
+	<p>Selected Event ID: @CurrentEventId</p>
+	@if (races == null)
+	{
+		<p>Loading races ...</p>
+	}
+	else if (!races.Any())
+	{
+		<p>No races found for this event.</p>
+	}
+	else
+	{
+		@foreach (var kvp in races)
+		{
+			<RaceView Race="kvp.Value" />
+			<hr />
+		}
+	}
+}
+
+@code {
+	private HubConnection? hubConnection;
+
+	private IndexEntry[]? events;
+	private InjestEvent? currentEvent;
+	private Dictionary<int, InjestRace> races = new ();
+
+	private int? currentEventId;
+	private int? CurrentEventId
+	{
+		get => currentEventId;
+		set
+		{
+			if (currentEventId != value)
+			{
+				currentEventId = value;
+				_ = OnCurrentEventChange();
+			}
+		}
+	}
+
+	protected override async Task OnInitializedAsync()
+	{
+		events = await Http.GetFromJsonAsync<IndexEntry[]>("api/injest/inspect/eventIndex/");
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+
+		hubConnection.On<ChangeGroup, int, int>(ChangeSignalMessages.Change, OnChange); 
+		await hubConnection.StartAsync();
+		await hubConnection.InvokeAsync("Subscribe", ChangeGroup.InjestEvent);
+		await hubConnection.InvokeAsync("Subscribe", ChangeGroup.InjestRace);
+	}
+
+	private async Task OnCurrentEventChange()
+	{
+		races.Clear();
+
+		if (CurrentEventId == null)
+		{
+			currentEvent = null;
+		}
+		else
+		{
+			currentEvent = await Http.GetFromJsonAsync<InjestEvent>($"api/injest/inspect/event/{CurrentEventId}");
+			await LoadRacesAsync();
+		}
+
+		StateHasChanged();
+	}
+
+	private async Task LoadRacesAsync()
+	{
+		if (currentEventId == null)
+			return;
+
+		var raceIndexes = await Http.GetFromJsonAsync<IndexEntry[]>($"api/injest/inspect/eventRacesIndex/{CurrentEventId}");
+		if (raceIndexes != null && raceIndexes.Length >= 0)
+		{
+			await LoadRacesByRaceId(raceIndexes.Select(r => r.Id));
+		}
+	}
+
+	async Task LoadRacesByRaceId(IEnumerable<int> raceIds)
+	{
+		List<Task> loadTasks = new();
+		foreach (var raceId in raceIds)
+		{
+			var loadTask = Task.Run(async () =>
+			{
+				var race = await Http.GetFromJsonAsync<InjestRace>($"api/injest/inspect/race/{raceId}");
+				if (race != null)
+					races[raceId] = race;
+				else if (races.ContainsKey(raceId))
+					races.Remove(raceId);
+			});
+			loadTasks.Add(loadTask);
+		}
+		await Task.WhenAll(loadTasks);
+
+		StateHasChanged();
+	}
+
+	private async Task OnChange(ChangeGroup group, int id, int parentId)
+	{
+		if(group == ChangeGroup.InjestEvent)
+		{
+			if (id == CurrentEventId)
+			{
+				currentEvent = await Http.GetFromJsonAsync<InjestEvent>($"api/injest/inspect/event/{CurrentEventId}");
+				StateHasChanged();
+			}
+		}
+		else if (group == ChangeGroup.InjestRace)
+		{
+			if(parentId == CurrentEventId)
+			{
+				var raceId = id;
+				var race = await Http.GetFromJsonAsync<InjestRace>($"api/injest/inspect/race/{raceId}");
+				if (race != null)
+					races[raceId] = race;
+				else if (races.ContainsKey(raceId))
+					races.Remove(raceId);
+				StateHasChanged();
+			}
+		}
+	}
+}

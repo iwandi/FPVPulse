@@ -1,0 +1,22 @@
+﻿@page "/wasm-test"
+@rendermode InteractiveWebAssembly
+
+<h3>WebAssembly Environment Test</h3>
+
+<p>
+    <button @onclick="GetUserAgent">Get Browser User Agent</button>
+</p>
+@if (!string.IsNullOrEmpty(userAgent))
+{
+        <p><b>User Agent:</b> @userAgent</p>
+}
+
+@code {
+    [Inject] IJSRuntime JS { get; set; } = default!;
+    string? userAgent;
+
+    private async Task GetUserAgent()
+    {
+        userAgent = await JS.InvokeAsync<string>("eval", "navigator.userAgent");
+    }
+}
