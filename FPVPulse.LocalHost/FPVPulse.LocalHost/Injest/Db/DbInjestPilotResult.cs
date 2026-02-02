@@ -11,6 +11,11 @@ namespace FPVPulse.LocalHost.Injest.Db
         [Required]
         public string InjestId { get; set; } = string.Empty;
 
+        public DbInjestPilotResult()
+        {
+
+        }
+
         public DbInjestPilotResult(string injestId, InjestPilotResult pilotResult)
         {
             InjestId = injestId;

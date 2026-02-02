@@ -19,6 +19,12 @@ namespace FPVPulse.LocalHost.Injest
             this.data = data;
         }
 
+        bool TryGetInjestId(out string injestId)
+        {
+            injestId = Request.Headers["Injest-ID"].FirstOrDefault() ?? "";
+            return !string.IsNullOrWhiteSpace(injestId);
+        }
+
         string GetInjestId()
         {
             string? injestId = Request.Headers["Injest-ID"].FirstOrDefault();
@@ -30,7 +36,11 @@ namespace FPVPulse.LocalHost.Injest
         [HttpGet]
         public IEnumerable<string> Get()
         {
-            return data.GetEventIds(GetInjestId());
+            if(TryGetInjestId(out var injestId))
+            {
+                return data.GetEventIds(injestId);
+            }
+            return data.GetEventIds();
         }
 
         [HttpGet("{injestEventId}")]

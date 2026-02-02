@@ -17,10 +17,10 @@ namespace FPVPulse.LocalHost
                 builder.Services.AddRazorComponents()
                     .AddInteractiveWebAssemblyComponents();
 
-                builder.Services.AddSingleton<InjestDbContext>();
-                builder.Services.AddSingleton<InjestProcessor>();
+                builder.Services.AddDbContext<InjestDbContext>();
                 builder.Services.AddSingleton<InjestData>();
                 builder.Services.AddSingleton<InjestQueue>();
+                builder.Services.AddHostedService<InjestProcessor>();
 
                 var mvcBuilder = builder.Services.AddControllers();
 
@@ -53,6 +53,12 @@ namespace FPVPulse.LocalHost
                     .AddAdditionalAssemblies(typeof(FPVPulse.LocalHost.Client._Imports).Assembly);
 
                 app.MapControllers();
+
+                using (var scope = app.Services.CreateScope())
+                {
+                    var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+                    db.Database.EnsureCreated();
+                }
 
                 app.Run();
             }

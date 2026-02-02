@@ -6,32 +6,35 @@ namespace FPVPulse.LocalHost.Injest
 {
     public class InjestProcessor : BackgroundService
     {
+        readonly IServiceProvider serviceProvider;
         readonly InjestQueue queue;
-        readonly InjestDbContext db;
 
-        public InjestProcessor(InjestQueue queue, InjestDbContext db)
+        public InjestProcessor(InjestQueue queue, IServiceProvider serviceProvider)
         {
             this.queue = queue;
-            this.db = db;
+            this.serviceProvider = serviceProvider;
         }
 
         protected override async Task ExecuteAsync(CancellationToken stoppingToken)
         {
-            while(!stoppingToken.IsCancellationRequested)
+            using var scope = serviceProvider.CreateScope();
+            var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+            while (!stoppingToken.IsCancellationRequested)
             {
                 string injestId;
                 if (queue.TryDequeueEvent(out injestId, out var @event))
-                    await ProcessEvent(injestId, @event);
+                    await ProcessEvent(db, injestId, @event);
                 else if (queue.TryDequeueRace(out injestId, out var race))
-                    await ProcessRace(injestId, race);
+                    await ProcessRace(db, injestId, race);
                 else if (queue.TryDequeuePilotResult(out injestId, out var pilotResult))
-                    await ProcessPilotResult(injestId, pilotResult);
+                    await ProcessPilotResult(db, injestId, pilotResult);
                 else
                     await Task.Delay(100);
             }
         }
 
-        async Task ProcessEvent(string injestId, InjestEvent @event)
+        async Task ProcessEvent(InjestDbContext? db, string injestId, InjestEvent @event)
         {
             var existing = await db.Events.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                 e.InjestEventId == @event.InjestEventId);
@@ -49,7 +52,7 @@ namespace FPVPulse.LocalHost.Injest
             await db.SaveChangesAsync();
         }
 
-        async Task ProcessRace(string injestId, InjestRace race)
+        async Task ProcessRace(InjestDbContext? db, string injestId, InjestRace race)
         {
             var existing = await db.Races.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                 e.InjestEventId == race.InjestEventId &&
@@ -68,7 +71,7 @@ namespace FPVPulse.LocalHost.Injest
             await db.SaveChangesAsync();
         }
 
-        async Task ProcessPilotResult(string injestId, InjestPilotResult pilotResult)
+        async Task ProcessPilotResult(InjestDbContext? db, string injestId, InjestPilotResult pilotResult)
         {
             var existing = await db.PilotResults.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                 e.InjestRaceId == pilotResult.InjestRaceId &&

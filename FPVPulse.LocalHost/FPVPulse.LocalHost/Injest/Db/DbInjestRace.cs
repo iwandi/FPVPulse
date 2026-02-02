@@ -6,10 +6,15 @@ namespace FPVPulse.LocalHost.Injest.Db
     public class DbInjestRace : InjestRace
     {
         [Key]
-        public int EventId { get; set; }
+        public int RaceId { get; set; }
 
         [Required]
         public string InjestId { get; set; } = string.Empty;
+
+        public DbInjestRace()
+        {
+
+        }
 
         public DbInjestRace(string injestId, InjestRace race)
         {
