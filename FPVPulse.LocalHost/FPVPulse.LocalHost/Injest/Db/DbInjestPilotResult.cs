@@ -8,6 +8,8 @@ namespace FPVPulse.LocalHost.Injest.Db
         [Key]
         public int PilotResultId { get; set; }
 
+        // We allow a non assoiated PilotResult as we can map it later back
+        public int? RaceId { get; set; }
         [Required]
         public string InjestId { get; set; } = string.Empty;
 
@@ -16,9 +18,11 @@ namespace FPVPulse.LocalHost.Injest.Db
 
         }
 
-        public DbInjestPilotResult(string injestId, InjestPilotResult pilotResult)
+        public DbInjestPilotResult(string injestId, InjestPilotResult pilotResult, DbInjestRace? race)
         {
             InjestId = injestId;
+            if (race != null)
+                RaceId = race.RaceId;
 
             InjestRaceId = pilotResult.InjestRaceId;
             InjestPilotId = pilotResult.InjestPilotId;
@@ -39,7 +43,7 @@ namespace FPVPulse.LocalHost.Injest.Db
             Laps = pilotResult.Laps;
         }
 
-        public bool Merge(InjestPilotResult pilotResult)
+        public bool Merge(InjestPilotResult pilotResult, DbInjestRace? race)
         {
             bool changed = false;
             if (pilotResult.CurrentSector != null && CurrentSector != pilotResult.CurrentSector)
@@ -110,6 +114,12 @@ namespace FPVPulse.LocalHost.Injest.Db
             if (pilotResult.Laps != null && Laps != pilotResult.Laps)
             {
                 Laps = pilotResult.Laps;
+                changed = true;
+            }
+
+            if(race != null && RaceId != race.RaceId)
+            {
+                RaceId = race.RaceId;
                 changed = true;
             }
             return changed;

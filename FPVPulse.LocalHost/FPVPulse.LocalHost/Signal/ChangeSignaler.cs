@@ -1,27 +1,8 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using FPVPulse.LocalHost.Client;
 
 namespace FPVPulse.LocalHost.Signal
 {
-    public enum ChangeGroup
-    {
-        None,
-        InjestEvent,
-        InjestRace,
-        InjestPilotResult
-    }
-
-    public class ChangeEventArgs : EventArgs
-    {
-        public ChangeGroup Group { get; }
-        public int Id { get; }
-
-        public ChangeEventArgs(ChangeGroup group, int id)
-        {
-            Group = group;
-            Id = id;
-        }
-    }
-
     public class ChangeSignaler
     {
         public event EventHandler<ChangeEventArgs>? OnChange;
@@ -36,9 +17,9 @@ namespace FPVPulse.LocalHost.Signal
             this.changeHub = changeHub;
         }
 
-        public async Task SignalChangeAsync(ChangeGroup group, int id)
+        public async Task SignalChangeAsync(ChangeGroup group, int id, int parentId)
         {
-            var change = new ChangeEventArgs(group, id);
+            var change = new ChangeEventArgs(group, id, parentId);
             await SignalChangeAsync(change);
         }
 
@@ -59,7 +40,7 @@ namespace FPVPulse.LocalHost.Signal
             }
 
             await changeHub.Clients.Group(change.Group.ToString())
-                .SendAsync("Change", change.Group, change.Id);
+                .SendAsync(ChangeSignalMessages.Change, change.Group, change.Id, change.ParentId);
         }
     }
 }

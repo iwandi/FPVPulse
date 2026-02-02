@@ -1,4 +1,5 @@
 ﻿using FPVPulse.Ingest;
+using FPVPulse.LocalHost.Client;
 using FPVPulse.LocalHost.Injest.Db;
 using FPVPulse.LocalHost.Signal;
 using Microsoft.EntityFrameworkCore;
@@ -60,7 +61,7 @@ namespace FPVPulse.LocalHost.Injest
             logger.LogInformation(json);
 
             await db.SaveChangesAsync();
-            await signaler.SignalChangeAsync(ChangeGroup.InjestEvent, existing.EventId);
+            await signaler.SignalChangeAsync(ChangeGroup.InjestEvent, existing.EventId, -1);
         }
 
         async Task ProcessRace(InjestDbContext? db, string injestId, InjestRace race)
@@ -69,14 +70,18 @@ namespace FPVPulse.LocalHost.Injest
             var existing = await db.Races.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                 e.InjestEventId == race.InjestEventId &&
                 e.InjestRaceId == race.InjestRaceId);
+
+            var @event = await db.Events.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+                e.InjestEventId == race.InjestEventId);
+
             if (existing == null)
             {
-                existing = new DbInjestRace(injestId, race);
+                existing = new DbInjestRace(injestId, race, @event);
                 db.Races.Add(existing);
                 hasChange = true;
             }
             else
-                hasChange &= existing.Merge(race);
+                hasChange &= existing.Merge(race, @event);
 
             if(hasChange)
             {
@@ -97,7 +102,7 @@ namespace FPVPulse.LocalHost.Injest
 
                     if (existingPilot == null)
                     {
-                        existingPilot = new DbInjestRacePilot(injestId, existing, pilot);
+                        existingPilot = new DbInjestRacePilot(injestId, pilot, existing);
                         db.RacePilots.Add(existingPilot);
                         pilotHasChanges = true;
                     }
@@ -118,24 +123,8 @@ namespace FPVPulse.LocalHost.Injest
 
             if (hasChange)
             {
-                await signaler.SignalChangeAsync(ChangeGroup.InjestRace, existing.RaceId);
-
-                // We need to wait to make shure all writes to all pilots are done. 
-                /*if (race.Pilots != null)
-                {
-                    foreach (var pilot in race.Pilots)
-                    {
-                        bool writeDone = false;
-                        while (!writeDone)
-                        {
-                            var existingPilot = await db.RacePilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
-                                e.InjestPilotId == pilot.InjestPilotId &&
-                                e.InjestRaceId == existing.InjestRaceId);
-
-                            writeDone = existingPilot != null;
-                        }
-                    }
-                }*/
+                var eventId = @event != null ? @event.EventId : -1;
+                await signaler.SignalChangeAsync(ChangeGroup.InjestRace, existing.RaceId, eventId);
             }
         }
 
@@ -144,14 +133,18 @@ namespace FPVPulse.LocalHost.Injest
             var existing = await db.PilotResults.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                 e.InjestRaceId == pilotResult.InjestRaceId &&
                 e.InjestPilotId == pilotResult.InjestPilotId);
+
+            var race = await db.Races.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+                e.InjestRaceId == pilotResult.InjestRaceId);
+
             if (existing == null)
             {
-                existing = new DbInjestPilotResult(injestId, pilotResult);
+                existing = new DbInjestPilotResult(injestId, pilotResult, race);
                 db.PilotResults.Add(existing);
             }
             else
             {
-                if (!existing.Merge(pilotResult))
+                if (!existing.Merge(pilotResult, race))
                     return;
             }
 
@@ -159,7 +152,9 @@ namespace FPVPulse.LocalHost.Injest
             logger.LogInformation(json);
 
             await db.SaveChangesAsync();
-            await signaler.SignalChangeAsync(ChangeGroup.InjestPilotResult, existing.PilotResultId);
+
+            var raceId = race != null ? race.RaceId : -1;
+            await signaler.SignalChangeAsync(ChangeGroup.InjestPilotResult, existing.PilotResultId, raceId);
         }
     }
 }

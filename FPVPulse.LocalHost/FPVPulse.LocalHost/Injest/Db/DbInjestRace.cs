@@ -8,6 +8,8 @@ namespace FPVPulse.LocalHost.Injest.Db
         [Key]
         public int RaceId { get; set; }
 
+        // We allow a non assoiated PilotResult as we can map it later back
+        public int? EventId { get; set; }
         [Required]
         public string InjestId { get; set; } = string.Empty;
 
@@ -16,9 +18,12 @@ namespace FPVPulse.LocalHost.Injest.Db
 
         }
 
-        public DbInjestRace(string injestId, InjestRace race)
+        public DbInjestRace(string injestId, InjestRace race, DbInjestEvent? @event)
         {
             InjestId = injestId;
+
+            if (@event != null)
+                EventId = @event.EventId;
 
             InjestRaceId = race.InjestRaceId;
             InjestEventId = race.InjestEventId;
@@ -31,7 +36,7 @@ namespace FPVPulse.LocalHost.Injest.Db
             Pilots = race.Pilots;
         }
 
-        public bool Merge(InjestRace race)
+        public bool Merge(InjestRace race, DbInjestEvent? @event)
         {
             bool changed = false;
             if (race.InjestName != null && InjestName != race.InjestName)
@@ -57,6 +62,12 @@ namespace FPVPulse.LocalHost.Injest.Db
             if (race.SecondOrderPosition != null && SecondOrderPosition != race.SecondOrderPosition)
             {
                 SecondOrderPosition = race.SecondOrderPosition;
+                changed = true;
+            }
+
+            if(@event != null && EventId != @event.EventId)
+            {
+                EventId = @event.EventId;
                 changed = true;
             }
             return changed;

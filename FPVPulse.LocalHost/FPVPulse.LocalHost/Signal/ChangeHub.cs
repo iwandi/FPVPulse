@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.SignalR;
+using FPVPulse.LocalHost.Client;
 
 namespace FPVPulse.LocalHost.Signal
 {

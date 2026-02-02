@@ -20,7 +20,7 @@ namespace FPVPulse.LocalHost.Injest.Db
 
         }
 
-        public DbInjestRacePilot(string injestId, DbInjestRace race, InjestRacePilot racePilot)
+        public DbInjestRacePilot(string injestId, InjestRacePilot racePilot, DbInjestRace race)
         {
             RaceId = race.RaceId;
 
