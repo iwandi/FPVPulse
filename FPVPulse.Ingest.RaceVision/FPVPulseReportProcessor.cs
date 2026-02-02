@@ -172,9 +172,9 @@ namespace FPVPulse.Ingest.RaceVision
             var roundLID = GetInt(jObject["RoundLID"]);
             var raceLID = GetInt(jObject["RaceLID"]);
             var roundType = GetInt(jObject["RoundType"]);
-            var raceName = GetString(jObject["RaceName"]);
+            //var raceName = GetString(jObject["RaceName"]);
             var raceOrderNumber = GetInt(jObject["RaceOrderNumber"]);
-            //var raceClassInformation = GetString(jObject["RaceClassInformation"]);
+            var raceClassInformation = GetString(jObject["RaceClassInformation"]);
             //var roundLetterTypeOrderNumberDisplay = GetString(jObject["RoundLetterTypeOrderNumberDisplay"]);
 
             if (!raceLID.HasValue && raceLID <= 0)
@@ -199,7 +199,7 @@ namespace FPVPulse.Ingest.RaceVision
                     {
                         InjestEventId = eventId,
                         InjestRaceId = raceLID.ToString(),
-                        InjestName = raceName,
+                        InjestName = raceClassInformation,
 
                         RaceType = RoundTypeToRaceType(roundType),
                         FirstOrderPoistion = raceOrderNumber,
@@ -412,6 +412,8 @@ namespace FPVPulse.Ingest.RaceVision
             var jObject = JObject.Parse(json);
 
             var race = jObject["Race"] as JObject;
+            if (race == null)
+                return;
 
             var raceLID = GetInt(race?["LID"]);
             //var roundLID = GetInt(race?["RoundLID"]);
