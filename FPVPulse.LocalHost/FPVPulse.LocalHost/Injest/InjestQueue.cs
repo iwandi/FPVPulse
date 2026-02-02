@@ -15,6 +15,11 @@ namespace FPVPulse.LocalHost.Injest
         readonly ConcurrentQueue<QueueItem<InjestEvent>> eventQueue = new();
         readonly ConcurrentQueue<QueueItem<InjestRace>> raceQueue = new();
         readonly ConcurrentQueue<QueueItem<InjestPilotResult>> pilotResultQueue = new();
+        readonly SemaphoreSlim signal = new(0);
+
+        public bool HasAnyItem => !eventQueue.IsEmpty ||
+            !raceQueue.IsEmpty ||
+            !pilotResultQueue.IsEmpty;
 
         readonly ILogger<InjestQueue> logger;
 
@@ -34,6 +39,7 @@ namespace FPVPulse.LocalHost.Injest
                 InjestId = injestId,
                 Item = @event
             });
+            signal.Release();
         }
 
         public bool TryDequeueEvent(out string injestId, out InjestEvent @event)
@@ -59,6 +65,7 @@ namespace FPVPulse.LocalHost.Injest
                 InjestId = injestId,  
                 Item = race
             });
+            signal.Release();
         }
 
         public bool TryDequeueRace(out string injestId, out InjestRace race)
@@ -85,6 +92,7 @@ namespace FPVPulse.LocalHost.Injest
                 InjestId = injestId,
                 Item = pilotResult
             });
+            signal.Release();
         }
 
         public bool TryDequeuePilotResult(out string injestId, out InjestPilotResult pilotResult)
@@ -98,6 +106,14 @@ namespace FPVPulse.LocalHost.Injest
             injestId = string.Empty;
             pilotResult = null!;
             return false;
+        }
+
+        public async Task WaitForAnyAsync(CancellationToken token)
+        {
+            while (!HasAnyItem)
+            {
+                await signal.WaitAsync(token);
+            }
         }
     }
 }

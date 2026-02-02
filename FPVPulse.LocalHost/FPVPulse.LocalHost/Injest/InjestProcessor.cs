@@ -29,8 +29,8 @@ namespace FPVPulse.LocalHost.Injest
                     await ProcessRace(db, injestId, race);
                 else if (queue.TryDequeuePilotResult(out injestId, out var pilotResult))
                     await ProcessPilotResult(db, injestId, pilotResult);
-                else
-                    await Task.Delay(100);
+
+                await queue.WaitForAnyAsync(stoppingToken);
             }
         }
 
