@@ -29,6 +29,14 @@ namespace FPVPulse.LocalHost
                 builder.Services.AddSingleton<InjestQueue>();
                 builder.Services.AddHostedService<InjestProcessor>();
 
+                builder.Services.AddHttpContextAccessor();
+                builder.Services.AddScoped<HttpClient>(sp =>
+                {
+                    var accessor = sp.GetRequiredService<IHttpContextAccessor>();
+                    var request = accessor.HttpContext?.Request;
+                    var baseUri = $"{request?.Scheme}://{request?.Host}/";
+                    return new HttpClient { BaseAddress = new Uri(baseUri) };
+                });
 
                 var mvcBuilder = builder.Services.AddControllers();
 
