@@ -44,7 +44,7 @@ else
 			.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
 			.ThenBy(kvp => kvp.Value.SecondOrderPosition))
 		{
-			<RaceView @key="kvp.Key" Race="kvp.Value" />
+			<InjestRaceView @key="kvp.Key" Race="kvp.Value" />
 			<hr />
 		}
 	}

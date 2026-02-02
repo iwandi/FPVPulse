@@ -1,0 +1,48 @@
+﻿@using FPVPulse.Ingest
+@* Remove @typeparam, use InjestRace directly *@
+
+<div class="race-display">
+    @if (Race != null)
+    {
+        <strong>@Race.RaceType @Race.InjestName</strong>
+        <span> - InjestRaceId: @Race.InjestRaceId</span>
+        <span> - InjestEventId: @Race.InjestEventId</span>
+        <span> - Layout: @Race.RaceLayout</span>
+        <span> - FirstOrderPoistion: @Race.FirstOrderPoistion</span>
+        <span> - SecondOrderPosition: @Race.SecondOrderPosition</span>
+
+        @if(Race.Pilots != null && Race.Pilots.Length > 0)
+        {
+            <table>
+                <tr>
+                    <th>InjestPilotId</th>
+                    <th>InjestName</th>
+                    <th>SeedPosition</th>
+                    <th>StartPosition</th>
+                    <th>Position</th>
+                    <th>Channel</th>
+                </tr>
+            @foreach(var pilot in Race.Pilots)
+            {
+                <tr>
+                    <td>@pilot.InjestPilotId</td>
+                    <td>@pilot.InjestName</td>
+                    <td>@pilot.SeedPosition</td>
+                    <td>@pilot.StartPosition</td>
+                    <td>@pilot.Position</td>
+                    <td>@pilot.Channel</td>
+                </tr>
+            }
+            </table>
+        }
+    }
+    else
+    {
+        <em>No race data.</em>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public InjestRace? Race { get; set; }
+}
