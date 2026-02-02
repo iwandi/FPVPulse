@@ -1,6 +1,8 @@
 ﻿using FPVPulse.Ingest;
 using FPVPulse.LocalHost.Injest.Db;
+using FPVPulse.LocalHost.Signal;
 using Microsoft.EntityFrameworkCore;
+using Newtonsoft.Json;
 
 namespace FPVPulse.LocalHost.Injest
 {
@@ -8,10 +10,15 @@ namespace FPVPulse.LocalHost.Injest
     {
         readonly IServiceProvider serviceProvider;
         readonly InjestQueue queue;
+        readonly ChangeSignaler signaler;
 
-        public InjestProcessor(InjestQueue queue, IServiceProvider serviceProvider)
+        readonly ILogger<InjestProcessor> logger;
+
+        public InjestProcessor(InjestQueue queue, ChangeSignaler signaler, ILogger<InjestProcessor> logger, IServiceProvider serviceProvider)
         {
             this.queue = queue;
+            this.signaler = signaler;
+            this.logger = logger;
             this.serviceProvider = serviceProvider;
         }
 
@@ -49,7 +56,11 @@ namespace FPVPulse.LocalHost.Injest
                     return;
             }
 
+            var json = JsonConvert.SerializeObject(existing);
+            logger.LogInformation(json);
+
             await db.SaveChangesAsync();
+            await signaler.SignalChangeAsync(ChangeGroup.InjestEvent, existing.EventId);
         }
 
         async Task ProcessRace(InjestDbContext? db, string injestId, InjestRace race)
@@ -67,10 +78,19 @@ namespace FPVPulse.LocalHost.Injest
             else
                 hasChange &= existing.Merge(race);
 
+            if(hasChange)
+            {
+                var json = JsonConvert.SerializeObject(existing);
+                logger.LogInformation(json);
+
+                await db.SaveChangesAsync();
+            }
+
             if (race.Pilots != null)
             {
                 foreach (var pilot in race.Pilots)
                 {
+                    bool pilotHasChanges = false;
                     var existingPilot = await db.RacePilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                         e.InjestPilotId == pilot.InjestPilotId &&
                         e.InjestRaceId == existing.InjestRaceId);
@@ -79,15 +99,44 @@ namespace FPVPulse.LocalHost.Injest
                     {
                         existingPilot = new DbInjestRacePilot(injestId, existing, pilot);
                         db.RacePilots.Add(existingPilot);
-                        hasChange = true;
+                        pilotHasChanges = true;
                     }
                     else
-                        hasChange &= existingPilot.Merge(pilot);
+                        pilotHasChanges &= existingPilot.Merge(pilot);
+
+                    if(pilotHasChanges)
+                    {
+                        var pilotJson = JsonConvert.SerializeObject(existingPilot);
+                        logger.LogInformation(pilotJson);
+
+                        await db.SaveChangesAsync();
+                    }
+
+                    hasChange &= pilotHasChanges;
                 }
             }
 
-            if(hasChange)
-                await db.SaveChangesAsync();
+            if (hasChange)
+            {
+                await signaler.SignalChangeAsync(ChangeGroup.InjestRace, existing.RaceId);
+
+                // We need to wait to make shure all writes to all pilots are done. 
+                /*if (race.Pilots != null)
+                {
+                    foreach (var pilot in race.Pilots)
+                    {
+                        bool writeDone = false;
+                        while (!writeDone)
+                        {
+                            var existingPilot = await db.RacePilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+                                e.InjestPilotId == pilot.InjestPilotId &&
+                                e.InjestRaceId == existing.InjestRaceId);
+
+                            writeDone = existingPilot != null;
+                        }
+                    }
+                }*/
+            }
         }
 
         async Task ProcessPilotResult(InjestDbContext? db, string injestId, InjestPilotResult pilotResult)
@@ -106,7 +155,11 @@ namespace FPVPulse.LocalHost.Injest
                     return;
             }
 
+            var json = JsonConvert.SerializeObject(existing);
+            logger.LogInformation(json);
+
             await db.SaveChangesAsync();
+            await signaler.SignalChangeAsync(ChangeGroup.InjestPilotResult, existing.PilotResultId);
         }
     }
 }
