@@ -21,18 +21,18 @@ namespace FPVPulse.LocalHost.Injest
             !raceQueue.IsEmpty ||
             !pilotResultQueue.IsEmpty;
 
-        readonly ILogger<InjestQueue> logger;
+        //readonly ILogger<InjestQueue> logger;
 
         public InjestQueue(ILogger<InjestQueue> logger)
         {
-            this.logger = logger;
+            //this.logger = logger;
         }
 
         public void Enqueue(string injestId, InjestEvent @event)
         {
-            var json = JsonConvert.SerializeObject(@event);
+            /*var json = JsonConvert.SerializeObject(@event);
             logger.LogInformation(injestId);
-            logger.LogInformation(json);
+            logger.LogInformation(json);*/
 
             eventQueue.Enqueue(new QueueItem<InjestEvent>
             {
@@ -57,9 +57,9 @@ namespace FPVPulse.LocalHost.Injest
 
         public void Enqueue(string injestId, InjestRace race)
         {
-            var json = JsonConvert.SerializeObject(race);
+            /*var json = JsonConvert.SerializeObject(race);
             logger.LogInformation(injestId);
-            logger.LogInformation(json);
+            logger.LogInformation(json);*/
 
             raceQueue.Enqueue(new QueueItem<InjestRace> { 
                 InjestId = injestId,  
@@ -83,9 +83,9 @@ namespace FPVPulse.LocalHost.Injest
 
         public void Enqueue(string injestId,  InjestPilotResult pilotResult)
         {
-            var json = JsonConvert.SerializeObject(pilotResult);
+            /*var json = JsonConvert.SerializeObject(pilotResult);
             logger.LogInformation(injestId);
-            logger.LogInformation(json);
+            logger.LogInformation(json);*/
 
             pilotResultQueue.Enqueue(new QueueItem<InjestPilotResult>
             {
