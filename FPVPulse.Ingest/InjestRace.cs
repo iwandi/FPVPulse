@@ -36,6 +36,23 @@ namespace FPVPulse.Ingest
         public int? SecondOrderPosition { get; set; }
 
         public InjestRacePilot[]? Pilots { get; set; }
+
+        public static int GetRaceTypeOrder(RaceType? raceType)
+        {
+            if(raceType == null)
+                return int.MaxValue;
+            switch (raceType)
+            {
+                case Ingest.RaceType.Practice:
+                    return 1;
+                case Ingest.RaceType.Qualifying:
+                    return 2;
+                case Ingest.RaceType.Mains:
+                    return 3;
+                default:
+                    return (int)raceType;
+            }
+        }
     }
 
     public class InjestRacePilot

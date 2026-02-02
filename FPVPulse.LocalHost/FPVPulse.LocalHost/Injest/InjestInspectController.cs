@@ -58,8 +58,9 @@ namespace FPVPulse.LocalHost.Injest
             var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
             return db.Races.Where(r => r.EventId == eventId)
-                .OrderBy(r => r.FirstOrderPoistion)
-                .OrderBy(r => r.SecondOrderPosition)
+                .OrderBy(r => r.RaceType)
+                .ThenBy(r => r.SecondOrderPosition)
+                .ThenBy(r => r.FirstOrderPoistion)
                 .Select(r => new IndexEntry
             {
                 Id = r.RaceId,

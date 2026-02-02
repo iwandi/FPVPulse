@@ -39,9 +39,12 @@ else
 	}
 	else
 	{
-		@foreach (var kvp in races)
+		@foreach (var kvp in races
+			.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
+			.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
+			.ThenBy(kvp => kvp.Value.SecondOrderPosition))
 		{
-			<RaceView Race="kvp.Value" />
+			<RaceView @key="kvp.Key" Race="kvp.Value" />
 			<hr />
 		}
 	}
