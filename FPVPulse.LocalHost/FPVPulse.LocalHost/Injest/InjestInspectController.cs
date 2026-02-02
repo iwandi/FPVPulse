@@ -44,7 +44,7 @@ namespace FPVPulse.LocalHost.Injest
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
-            return db.Events.Select(e => new IndexEntry
+            return db.Events.OrderBy(e => e.StartDate).Select(e => new IndexEntry
             {
                 Id = e.EventId,
                 Name = e.InjestName,
@@ -57,7 +57,10 @@ namespace FPVPulse.LocalHost.Injest
             using var scope = serviceProvider.CreateScope();
             var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
-            return db.Races.Where(r => r.EventId == eventId).Select(r => new IndexEntry
+            return db.Races.Where(r => r.EventId == eventId)
+                .OrderBy(r => r.FirstOrderPoistion)
+                .OrderBy(r => r.SecondOrderPosition)
+                .Select(r => new IndexEntry
             {
                 Id = r.RaceId,
                 Name = r.InjestName,
