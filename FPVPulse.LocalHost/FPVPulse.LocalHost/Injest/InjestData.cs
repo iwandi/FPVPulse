@@ -84,7 +84,7 @@ namespace FPVPulse.LocalHost.Injest
             return race;
         }
 
-        public void FillPilots(InjestDbContext db, DbInjestRace? race)
+        public static void FillPilots(InjestDbContext db, DbInjestRace? race)
         {
             if (race != null)
             {
