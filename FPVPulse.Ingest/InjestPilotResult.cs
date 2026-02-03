@@ -7,10 +7,10 @@ namespace FPVPulse.Ingest
     {
         [JsonProperty(Required = Required.Always)]
         public string InjestRaceId { get; set; } = String.Empty;
-        [JsonProperty(Required = Required.Always)]
-        public string InjestPilotId { get; set; } = String.Empty;
+        public string? InjestPilotId { get; set; }
+        public string? InjestPilotEntryId { get; set; }
 
-        public int? CurrentSector { get; set; }
+		public int? CurrentSector { get; set; }
         public int? CurrentSplit { get; set; }
 
         public int? Position { get; set; }

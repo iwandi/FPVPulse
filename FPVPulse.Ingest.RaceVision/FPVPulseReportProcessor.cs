@@ -309,8 +309,9 @@ namespace FPVPulse.Ingest.RaceVision
                                 LapTime = lapTimeSeconds,
                                 IsInvalid = isBadLap,                                
                             };
+							lapsData.Add(injestLap);
 
-                            i++;
+							i++;
                         }
                     }
 
@@ -342,8 +343,9 @@ namespace FPVPulse.Ingest.RaceVision
                     var pilotResult = new InjestPilotResult
                     {
                         InjestRaceId = raceId,
+						InjestPilotEntryId = raceEntryLID.ToString(),
 
-                        CurrentSector = currentSectorNumber,
+						CurrentSector = currentSectorNumber,
                         CurrentSplit = currentSplitNumber,
 
                         LapCount = laps,

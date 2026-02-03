@@ -96,7 +96,15 @@ namespace FPVPulse.Ingest
                 Console.WriteLine("Error no valid ids");
             }
 
-            var url = string.Concat(PilotResultUrl, injestPilotResult.InjestRaceId, "/result/", injestPilotResult.InjestPilotId);
+            bool hasPilotId = !string.IsNullOrWhiteSpace(injestPilotResult.InjestPilotId);
+            bool hasPilotEntryId = !string.IsNullOrWhiteSpace(injestPilotResult.InjestPilotEntryId);
+
+			if (!hasPilotId && !hasPilotEntryId)
+			{
+				Console.WriteLine("Error no valid pilot ids");
+			}
+
+			var url = string.Concat(PilotResultUrl, injestPilotResult.InjestRaceId, "/result");
             var request = BuildRequest(injestPilotResult, url);
             var response = await httpClient.SendAsync(request);
             return response.EnsureSuccessStatusCode();

@@ -41,23 +41,24 @@ namespace FPVPulse.LocalHost.Injest
             return result;
         }
 
-        [HttpPut("{injestRaceId}/result/{injestPilotId}")]
-        public async Task<IActionResult> Put(string injestRaceId, string injestPilotId, [FromBody] InjestPilotResult result)
+        [HttpPut("{injestRaceId}/result")]
+        public async Task<IActionResult> Put(string injestRaceId, [FromBody] InjestPilotResult result)
         {
             if (string.IsNullOrWhiteSpace(injestRaceId))
                 return BadRequest("Missing injestRaceId.");
-            if (string.IsNullOrWhiteSpace(injestPilotId))
-                return BadRequest("Missing injestPilotId.");
 
             if (result == null)
                 return BadRequest("Failed to deserialize InjestPilotResult = null");
 
             if (result.InjestRaceId != injestRaceId)
                 return BadRequest($"injestRaceId missamch {injestRaceId} != {result.InjestRaceId}");
-            if (result.InjestPilotId != injestPilotId)
-                return BadRequest($"injestRaceId missamch {injestPilotId} != {result.InjestPilotId}");
 
-            queue.Enqueue(GetInjestId(), result);
+			bool hasPilotId = result.InjestPilotId != null && !string.IsNullOrWhiteSpace(result.InjestPilotId);
+			bool hasPilotEntryId = result.InjestPilotEntryId != null && !string.IsNullOrWhiteSpace(result.InjestPilotEntryId);
+			if (!hasPilotId && !hasPilotEntryId)
+				return BadRequest("Missing injestPilotId and injestPilotEntryId.");
+
+			queue.Enqueue(GetInjestId(), result);
             return Ok();
         }
     }

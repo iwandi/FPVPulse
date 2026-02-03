@@ -130,12 +130,27 @@ namespace FPVPulse.LocalHost.Injest
 
         async Task ProcessPilotResult(InjestDbContext? db, string injestId, InjestPilotResult pilotResult)
         {
-            var existing = await db.PilotResults.FirstOrDefaultAsync(e => e.InjestId == injestId &&
-                e.InjestRaceId == pilotResult.InjestRaceId &&
-                e.InjestPilotId == pilotResult.InjestPilotId);
+            bool hasPilotId = pilotResult.InjestPilotId != null && !string.IsNullOrWhiteSpace(pilotResult.InjestPilotId);
+			bool hasPilotEntryId = pilotResult.InjestPilotEntryId != null && !string.IsNullOrWhiteSpace(pilotResult.InjestPilotEntryId);
 
-            var race = await db.Races.FirstOrDefaultAsync(e => e.InjestId == injestId &&
-                e.InjestRaceId == pilotResult.InjestRaceId);
+            DbInjestPilotResult? existing = null;
+            if (hasPilotId)
+            {
+                existing = await db.PilotResults.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+                    e.InjestRaceId == pilotResult.InjestRaceId &&
+                    e.InjestPilotId == pilotResult.InjestPilotId);
+            }
+			else if(hasPilotEntryId)
+			{
+				existing = await db.PilotResults.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+					e.InjestRaceId == pilotResult.InjestRaceId &&
+					e.InjestPilotEntryId == pilotResult.InjestPilotEntryId);
+			}
+            else
+                throw new Exception("PilotResult must have either InjestPilotId or InjestPilotEntryId");
+
+			var race = await db.Races.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+                        e.InjestRaceId == pilotResult.InjestRaceId);
 
             if (existing == null)
             {
