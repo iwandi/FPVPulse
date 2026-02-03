@@ -1,9 +1,11 @@
 ﻿@page "/injest"
 @using FPVPulse.Ingest
 @using Microsoft.AspNetCore.SignalR.Client
+@using System.Text.Json
 @rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 
 <h3>Injest Events</h3>
 
@@ -44,7 +46,14 @@ else
 			.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
 			.ThenBy(kvp => kvp.Value.SecondOrderPosition))
 		{
-			<InjestRaceView @key="kvp.Key" Race="kvp.Value" />
+			InjestPilotResult[] flatList = null;
+			if (pilotResults.TryGetValue(kvp.Key, out var pilotResult) && pilotResult != null)
+			{
+				flatList = pilotResult.Select(t => t.result).ToArray();
+			}
+			//JS.InvokeVoidAsync("console.log", "flatList:", flatList);
+
+			<InjestRaceView @key="kvp.Key" Race="kvp.Value" Results="flatList"/>
 			<hr />
 		}
 	}
@@ -55,7 +64,8 @@ else
 
 	private IndexEntry[]? events;
 	private InjestEvent? currentEvent;
-	private Dictionary<int, InjestRace> races = new ();
+	private Dictionary<int, InjestRace> races = new();
+	private Dictionary<int, List<(int id, InjestPilotResult result)>> pilotResults = new();
 
 	private int? currentEventId;
 	private int? CurrentEventId
@@ -84,11 +94,13 @@ else
 		await hubConnection.StartAsync();
 		await hubConnection.InvokeAsync("Subscribe", ChangeGroup.InjestEvent);
 		await hubConnection.InvokeAsync("Subscribe", ChangeGroup.InjestRace);
+		await hubConnection.InvokeAsync("Subscribe", ChangeGroup.InjestPilotResult);
 	}
 
 	private async Task OnCurrentEventChange()
 	{
 		races.Clear();
+		pilotResults.Clear();
 
 		if (CurrentEventId == null)
 		{
@@ -123,10 +135,19 @@ else
 			var loadTask = Task.Run(async () =>
 			{
 				var race = await Http.GetFromJsonAsync<InjestRace>($"api/injest/inspect/race/{raceId}");
-				if (race != null)
-					races[raceId] = race;
-				else if (races.ContainsKey(raceId))
-					races.Remove(raceId);
+				StoreInjestRace(raceId, race);
+
+				var stream = await Http.GetStreamAsync($"api/injest/inspect/race/{raceId}/result");
+				using var doc = await JsonDocument.ParseAsync(stream);
+				foreach (var element in doc.RootElement.EnumerateArray())
+				{
+					if (element.TryGetProperty("pilotResultId", out var resultField))
+					{
+						var resultId = resultField.GetInt32();
+						var pilotResult = element.Deserialize<InjestPilotResult>(new JsonSerializerOptions { PropertyNameCaseInsensitive = true });
+						StoreInjestPilotResult(raceId, resultId, pilotResult);
+					}
+				}
 			});
 			loadTasks.Add(loadTask);
 		}
@@ -137,7 +158,7 @@ else
 
 	private async Task OnChange(ChangeGroup group, int id, int parentId)
 	{
-		if(group == ChangeGroup.InjestEvent)
+		if (group == ChangeGroup.InjestEvent)
 		{
 			if (id == CurrentEventId)
 			{
@@ -147,16 +168,51 @@ else
 		}
 		else if (group == ChangeGroup.InjestRace)
 		{
-			if(parentId == CurrentEventId)
+			if (parentId == CurrentEventId)
 			{
 				var raceId = id;
 				var race = await Http.GetFromJsonAsync<InjestRace>($"api/injest/inspect/race/{raceId}");
-				if (race != null)
-					races[raceId] = race;
-				else if (races.ContainsKey(raceId))
-					races.Remove(raceId);
+				StoreInjestRace(raceId, race);
 				StateHasChanged();
 			}
+		}
+		else if (group == ChangeGroup.InjestPilotResult && races.ContainsKey(parentId))
+		{
+			var raceId = parentId;
+			var resultId = id;
+			var pilotResult = await Http.GetFromJsonAsync<InjestPilotResult>($"api/injest/inspect/race/result/{resultId}");
+
+			if (pilotResult != null)
+			{
+				StoreInjestPilotResult(raceId, resultId, pilotResult);
+				StateHasChanged();
+			}
+		}
+	}
+
+	void StoreInjestRace(int raceId, InjestRace race)
+	{
+		if (race != null)
+			races[raceId] = race;
+		else if (races.ContainsKey(raceId))
+			races.Remove(raceId);
+	}
+
+	void StoreInjestPilotResult(int raceId, int resultId, InjestPilotResult pilotResult)
+	{
+		if (!pilotResults.TryGetValue(raceId, out var resultsList))
+		{
+			resultsList = new List<(int id, InjestPilotResult result)>();
+			resultsList.Add((resultId, pilotResult));
+			pilotResults.Add(raceId, resultsList);
+		}
+		else
+		{
+			int existingIndex = resultsList.FindIndex(r => r.id == resultId);
+			if (existingIndex >= 0)
+				resultsList[existingIndex] = (resultId, pilotResult);
+			else
+				resultsList.Add((resultId, pilotResult));
 		}
 	}
 }

@@ -22,9 +22,26 @@
                     <th>StartPosition</th>
                     <th>Position</th>
                     <th>Channel</th>
+                    <td>CurrentSector</td>
+                    <td>CurrentSplit</td>
+                    <td>Position</td>
+                    <td>StartTime</td>
+                    <td>FinishTime</td>
+                    <td>LapCount</td>
+                    <td>TotalTime</td>
+                    <td>TopLapTime</td>
+                    <td>Top2ConsecutiveLapTime</td>
+                    <td>Top3ConsecutiveLapTime</td>
+                    <td>AverageLapTime</td>
+                    <td>IsComplited</td>
+                    <td>Flags</td
+                    <td>Laps</td>
                 </tr>
             @foreach(var pilot in Race.Pilots)
             {
+                var result = Results?.FirstOrDefault(r => r.InjestPilotId == pilot.InjestPilotId ||
+                    r.InjestPilotEntryId == pilot.InjestPilotEntryId);
+
                 <tr>
                     <td>@pilot.InjestPilotEntryId</td>
                     <td>@pilot.InjestPilotId</td>
@@ -33,6 +50,25 @@
                     <td>@pilot.StartPosition</td>
                     <td>@pilot.Position</td>
                     <td>@pilot.Channel</td>
+                    <td>@result?.CurrentSector</td>
+                    <td>@result?.CurrentSplit</td>
+                    <td>@result?.Position</td>
+                    <td>@result?.StartTime</td>
+                    <td>@result?.FinishTime</td>
+                    <td>@result?.LapCount</td>
+                    <td>@result?.TotalTime</td>
+                    <td>@result?.TopLapTime</td>
+                    <td>@result?.Top2ConsecutiveLapTime</td>
+                    <td>@result?.Top3ConsecutiveLapTime</td>
+                    <td>@result?.AverageLapTime</td>
+                    <td>@result?.IsComplited</td>
+                    <td>@result?.Flags</td>
+                    <td>
+                    @if(result != null && result.Laps != null && result.Laps.Length > 0)
+                    {
+						@string.Join(", ", result.Laps.Select(l => l.LapTime))
+                    }
+                    </td>
                 </tr>
             }
             </table>
@@ -47,4 +83,6 @@
 @code {
     [Parameter]
     public InjestRace? Race { get; set; }
+    [Parameter]
+    public InjestPilotResult[]? Results { get; set; }
 }
