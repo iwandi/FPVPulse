@@ -1,4 +1,5 @@
 ﻿using System.Diagnostics;
+using System.Globalization;
 using Newtonsoft.Json;
 
 namespace FPVPulse.Ingest.RaceVision
@@ -9,8 +10,11 @@ namespace FPVPulse.Ingest.RaceVision
 
         [STAThread]
         public static async Task Main(string[] args)
-        {
-            if (!File.Exists(configFilePath))
+		{
+			CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+			CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
+			if (!File.Exists(configFilePath))
             {
                 Console.WriteLine($"Configuration file '{configFilePath}' not found. Please create a config.json file.");
                 return;

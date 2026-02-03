@@ -5,6 +5,8 @@ namespace FPVPulse.LocalHost.Signal
 {
     public class ChangeSignaler
     {
+        // TODO : add additional channels where the whole data is transmitted
+
         public event EventHandler<ChangeEventArgs>? OnChange;
         public event EventHandler<ChangeEventArgs>? OnInjestEventChanged;
         public event EventHandler<ChangeEventArgs>? OnInjestRaceChanged;

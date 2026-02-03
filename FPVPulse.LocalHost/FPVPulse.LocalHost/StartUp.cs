@@ -5,6 +5,7 @@ using FPVPulse.LocalHost.Signal;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.NewtonsoftJson;
 using Microsoft.EntityFrameworkCore;
+using System.Globalization;
 
 namespace FPVPulse.LocalHost
 {
@@ -13,7 +14,10 @@ namespace FPVPulse.LocalHost
         [STAThread]
         public static void Main(string[] args)
         {
-            var builder = WebApplication.CreateBuilder(args);
+			CultureInfo.DefaultThreadCurrentCulture = CultureInfo.InvariantCulture;
+			CultureInfo.DefaultThreadCurrentUICulture = CultureInfo.InvariantCulture;
+
+			var builder = WebApplication.CreateBuilder(args);
             {
                 // Add services to the container.
                 builder.Services.AddRazorComponents()
