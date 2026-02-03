@@ -15,6 +15,7 @@
         {
             <table>
                 <tr>
+                    <th>InjestPilotEntryId</th>
                     <th>InjestPilotId</th>
                     <th>InjestName</th>
                     <th>SeedPosition</th>
@@ -25,6 +26,7 @@
             @foreach(var pilot in Race.Pilots)
             {
                 <tr>
+                    <td>@pilot.InjestPilotEntryId</td>
                     <td>@pilot.InjestPilotId</td>
                     <td>@pilot.InjestName</td>
                     <td>@pilot.SeedPosition</td>

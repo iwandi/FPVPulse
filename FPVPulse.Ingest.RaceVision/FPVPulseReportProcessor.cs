@@ -14,7 +14,8 @@ namespace FPVPulse.Ingest.RaceVision
 
         readonly object eventLock = new();
         string currentEventId = String.Empty;
-        bool isValidEvent = false;
+        string currentEventName = String.Empty;
+		bool isValidEvent = false;
 
         readonly object raceLock = new();
         string currentRaceId = String.Empty;
@@ -71,6 +72,7 @@ namespace FPVPulse.Ingest.RaceVision
                 {
                     isValidEvent = false;
                     currentEventId = String.Empty;
+					currentEventName = String.Empty;
 					autoScan.Reset();
 				}
                 return;
@@ -82,7 +84,8 @@ namespace FPVPulse.Ingest.RaceVision
 					autoScan.Reset();
 
 				currentEventId = LID;
-                isValidEvent = true;
+                currentEventName = eventName ?? String.Empty;
+				isValidEvent = true;
             }
 
             _ = Task.Run(async () => {
@@ -313,7 +316,7 @@ namespace FPVPulse.Ingest.RaceVision
 
                     var pilot = new InjestRacePilot
                     {
-                        InjestPilotId = raceEntryLID.ToString(),
+						InjestPilotEntryId = raceEntryLID.ToString(),
 
                         InjestName = driverName,
                         Channel = frequencyName,
@@ -451,38 +454,45 @@ namespace FPVPulse.Ingest.RaceVision
             var pilots = new List<InjestRacePilot>();
             //var result = new List<InjestPilotResult>();
 
-            if (raceEntries != null)
+            bool isValidForCurrentEvent = false;
+
+			if (raceEntries != null)
             {
                 foreach (var raceEntry in raceEntries)
                 {
                     var raceEntryLID = GetInt(raceEntry["LID"]);
                     //var entryOrderNumber = GetInt(raceEntry["OrderNumber"]);
                     var number = GetInt(raceEntry["Number"]);
-                    //var driverLID = GetInt(raceEntry["DriverLID"]);
+                    var driverLID = GetInt(raceEntry["DriverLID"]);
                     var driverName = GetString(raceEntry["DriverName"]);
                     //var driverLastName = GetString(raceEntry["DriverLastName"]);
                     var frequencyName = GetString(raceEntry["FrequencyName"]);
                     var seedPosition = GetInt(raceEntry["SeedPosition"]);
+                    var eventName = GetString(raceEntry["EventName"]);
 
-                    //var finalPositionOverall = GetInt(raceEntry["FinalPositionOverall"]);
-                    //var entryStartMicrosecondsUTC = GetInt(raceEntry["StartMicrosecondsUTC"]);
+                    if(!isValidForCurrentEvent)
+					    isValidForCurrentEvent = eventName == currentEventName;
 
-                    //var completedLaps = GetInt(raceEntry["CompletedLaps"]);
-                    //var completedTime = GetFloat(raceEntry["CompletedTime"]);
+					//var finalPositionOverall = GetInt(raceEntry["FinalPositionOverall"]);
+					//var entryStartMicrosecondsUTC = GetInt(raceEntry["StartMicrosecondsUTC"]);
 
-                    //var fastestLap = GetFloat(raceEntry["FastestLap"]);
-                    //var top2Consecutive = GetFloat(raceEntry["Top2Consecutive"]);
-                    //var top3Consecutive = GetFloat(raceEntry["Top3Consecutive"]);
-                    //var averageLap = GetFloat(raceEntry["AverageLap"]);
+					//var completedLaps = GetInt(raceEntry["CompletedLaps"]);
+					//var completedTime = GetFloat(raceEntry["CompletedTime"]);
 
-                    if(raceEntryLID == null || raceEntryLID <= 0)
+					//var fastestLap = GetFloat(raceEntry["FastestLap"]);
+					//var top2Consecutive = GetFloat(raceEntry["Top2Consecutive"]);
+					//var top3Consecutive = GetFloat(raceEntry["Top3Consecutive"]);
+					//var averageLap = GetFloat(raceEntry["AverageLap"]);
+
+					if (driverLID == null || driverLID <= 0)
                         continue;
 
                     pilots.Add(new InjestRacePilot
                     {
-                        InjestPilotId = raceEntryLID.ToString(),
+                        InjestPilotId = driverLID.ToString(),
+						InjestPilotEntryId = raceEntryLID.ToString(),
 
-                        InjestName = driverName,
+						InjestName = driverName,
 
                         SeedPosition = seedPosition,
                         StartPosition = number,
@@ -492,6 +502,16 @@ namespace FPVPulse.Ingest.RaceVision
 
                     // TODO option to ingest pilot results
                 }
+            }
+
+            if(!isValidForCurrentEvent)
+            {
+				autoScan.MarkRaceId(raceLID.Value, false, false);
+				if (autoScan.TryGetNextScanId(out var nextScanId))
+				{
+					_ = RequestRaceEntryByRace(nextScanId);
+				}
+				return;
             }
 
 			_ = Task.Run(async () => {
@@ -510,7 +530,7 @@ namespace FPVPulse.Ingest.RaceVision
                     });
 
                     // Do not mark as valid as we do not know
-					autoScan.MarkRaceId(raceLID.Value, false, false);
+					autoScan.MarkRaceId(raceLID.Value, true, false);
 					if (autoScan.TryGetNextScanId(out var nextScanId))
 					{
 						_ = RequestRaceEntryByRace(nextScanId);

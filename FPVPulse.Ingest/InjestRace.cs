@@ -59,8 +59,9 @@ namespace FPVPulse.Ingest
     {
         [JsonProperty(Required = Required.Always)]
         public string InjestPilotId { get; set; } = String.Empty;
+		public string InjestPilotEntryId { get; set; } = String.Empty;
 
-        public string? InjestName { get; set; }
+		public string? InjestName { get; set; }
 
         public int? SeedPosition { get; set; }
         public int? StartPosition { get; set; }

@@ -97,7 +97,7 @@ namespace FPVPulse.LocalHost.Injest
                 {
                     bool pilotHasChanges = false;
                     var existingPilot = await db.RacePilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
-                        e.InjestPilotId == pilot.InjestPilotId &&
+                        e.InjestPilotEntryId == pilot.InjestPilotEntryId &&
                         e.InjestRaceId == existing.InjestRaceId);
 
                     if (existingPilot == null)

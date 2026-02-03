@@ -26,8 +26,9 @@ namespace FPVPulse.LocalHost.Injest.Db
 
             InjestId = injestId;
             InjestRaceId = race.InjestRaceId;
+			InjestPilotEntryId = racePilot.InjestPilotEntryId;
+			InjestPilotId = racePilot.InjestPilotId;
 
-            InjestPilotId = racePilot.InjestPilotId;
             InjestName = racePilot.InjestName;
             SeedPosition = racePilot.SeedPosition;
             StartPosition = racePilot.StartPosition;
@@ -38,7 +39,12 @@ namespace FPVPulse.LocalHost.Injest.Db
         public bool Merge(InjestRacePilot racePilot)
         {
             bool changed = false;
-            if (racePilot.InjestName != null && InjestName != racePilot.InjestName)
+			if (racePilot.InjestPilotId != null && !string.IsNullOrWhiteSpace(racePilot.InjestPilotId) && InjestPilotId != racePilot.InjestPilotId)
+			{
+				InjestPilotId = racePilot.InjestPilotId;
+				changed = true;
+			}
+			if (racePilot.InjestName != null && !string.IsNullOrWhiteSpace(racePilot.InjestName) && InjestName != racePilot.InjestName)
             {
                 InjestName = racePilot.InjestName;
                 changed = true;
@@ -57,7 +63,7 @@ namespace FPVPulse.LocalHost.Injest.Db
                 Position = racePilot.Position;
                 changed = true;
             }
-            if (racePilot.Channel != null && Channel != racePilot.Channel)
+            if (racePilot.Channel != null && !string.IsNullOrWhiteSpace(racePilot.Channel) && Channel != racePilot.Channel)
             {
                 Channel = racePilot.Channel;
                 changed = true;

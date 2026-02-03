@@ -39,7 +39,7 @@ namespace FPVPulse.LocalHost.Injest.Db
         public bool Merge(InjestRace race, DbInjestEvent? @event)
         {
             bool changed = false;
-            if (race.InjestName != null && InjestName != race.InjestName)
+            if (race.InjestName != null && !string.IsNullOrWhiteSpace(race.InjestName) && InjestName != race.InjestName)
             {
                 InjestName = race.InjestName;
                 changed = true;
