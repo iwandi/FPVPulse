@@ -61,7 +61,7 @@ namespace FPVPulse.LocalHost.Injest
             logger.LogInformation(json);
 
             await db.SaveChangesAsync();
-            await signaler.SignalChangeAsync(ChangeGroup.InjestEvent, existing.EventId, -1);
+            await signaler.SignalChangeAsync(ChangeGroup.InjestEvent, existing.EventId, -1, existing);
         }
 
         async Task ProcessRace(InjestDbContext? db, string injestId, InjestRace race)
@@ -91,7 +91,9 @@ namespace FPVPulse.LocalHost.Injest
                 await db.SaveChangesAsync();
             }
 
-            if (race.Pilots != null)
+            List<DbInjestRacePilot> existingPilots = new List<DbInjestRacePilot>();
+			List<DbInjestRacePilot> changedPilots = new List<DbInjestRacePilot>();
+			if (race.Pilots != null)
             {
                 foreach (var pilot in race.Pilots)
                 {
@@ -115,17 +117,24 @@ namespace FPVPulse.LocalHost.Injest
                         logger.LogInformation(pilotJson);
 
                         await db.SaveChangesAsync();
-                    }
+                        changedPilots.Add(existingPilot);
+					}
+					existingPilots.Add(existingPilot);
 
-                    hasChange &= pilotHasChanges;
+					hasChange &= pilotHasChanges;
                 }
             }
 
             if (hasChange)
             {
-                var eventId = @event != null ? @event.EventId : -1;
-                await signaler.SignalChangeAsync(ChangeGroup.InjestRace, existing.RaceId, eventId);
-            }
+                existing.Pilots = existingPilots.ToArray();
+
+				var eventId = @event != null ? @event.EventId : -1;
+                await signaler.SignalChangeAsync(ChangeGroup.InjestRace, existing.RaceId, eventId, existing);
+
+				foreach (var pilot in changedPilots)
+					await signaler.SignalChangeAsync(ChangeGroup.InjestRacePilot, pilot.RacePilotId, existing.RaceId, pilot);
+			}
         }
 
         async Task ProcessPilotResult(InjestDbContext? db, string injestId, InjestPilotResult pilotResult)
@@ -169,7 +178,7 @@ namespace FPVPulse.LocalHost.Injest
             await db.SaveChangesAsync();
 
             var raceId = race != null ? race.RaceId : -1;
-            await signaler.SignalChangeAsync(ChangeGroup.InjestPilotResult, existing.PilotResultId, raceId);
+            await signaler.SignalChangeAsync(ChangeGroup.InjestPilotResult, existing.PilotResultId, raceId, existing);
         }
     }
 }

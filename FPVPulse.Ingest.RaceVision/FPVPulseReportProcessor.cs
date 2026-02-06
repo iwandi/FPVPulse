@@ -124,8 +124,10 @@ namespace FPVPulse.Ingest.RaceVision
                     _ = await ingestClient.PutEvent(new InjestEvent
                     {
                         InjestEventId = currentEventId,
-                        NextRaceSheduledStartTime = isTimerRunning.HasValue && isTimerRunning.Value ? DateTime.UtcNow + (timeUntilStart ?? TimeSpan.Zero) : null,
-                    });
+						CurrentRaceRunTimeSeconds = GetSeconds(timeElapsed),
+						NextRaceSheduledStartTime = isTimerRunning.HasValue && isTimerRunning.Value ? DateTime.UtcNow + (timeUntilStart ?? TimeSpan.Zero) : null,
+						NextRaceSheduledStartSeconds = GetSeconds(timeUntilStart),
+					});
                 }
                 catch (Exception ex)
                 {
@@ -610,7 +612,14 @@ namespace FPVPulse.Ingest.RaceVision
             return null;
         }
 
-        public Task RequestRaceEntryByRace(int raceId)
+        float? GetSeconds(TimeSpan? timeSpan)
+		{
+			if (!timeSpan.HasValue)
+				return null;
+			return Convert.ToSingle(timeSpan.Value.TotalSeconds);
+		}
+
+		public Task RequestRaceEntryByRace(int raceId)
         {
             Task.Delay(100).Wait();
 

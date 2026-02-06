@@ -16,6 +16,9 @@ namespace FPVPulse.Ingest
         public string? CurrentInjestRaceId { get; set; }
         public string? NextInjestRaceId { get; set; }
 
-        public DateTime? NextRaceSheduledStartTime { get; set; }
-    }
+		public float? CurrentRaceRunTimeSeconds { get; set; }
+
+		public DateTime? NextRaceSheduledStartTime { get; set; }
+		public float? NextRaceSheduledStartSeconds { get; set; }
+	}
 }

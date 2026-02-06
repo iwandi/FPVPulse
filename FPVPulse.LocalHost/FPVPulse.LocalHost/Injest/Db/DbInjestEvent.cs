@@ -57,12 +57,22 @@ namespace FPVPulse.LocalHost.Injest.Db
                 NextInjestRaceId = @event.NextInjestRaceId;
                 changed = true;
             }
-            if (@event.NextRaceSheduledStartTime != null && NextRaceSheduledStartTime != @event.NextRaceSheduledStartTime)
+            if (CurrentRaceRunTimeSeconds != @event.CurrentRaceRunTimeSeconds)
             {
-                NextRaceSheduledStartTime = @event.NextRaceSheduledStartTime;
+				CurrentRaceRunTimeSeconds = @event.CurrentRaceRunTimeSeconds;
                 changed = true;
-            }
-            return changed;
+			}
+			if (NextRaceSheduledStartTime != @event.NextRaceSheduledStartTime)
+			{
+				NextRaceSheduledStartTime = @event.NextRaceSheduledStartTime;
+				changed = true;
+			}
+			if (NextRaceSheduledStartSeconds != @event.NextRaceSheduledStartSeconds)
+			{
+				NextRaceSheduledStartSeconds = @event.NextRaceSheduledStartSeconds;
+				changed = true;
+			}
+			return changed;
         }
     }
 }
