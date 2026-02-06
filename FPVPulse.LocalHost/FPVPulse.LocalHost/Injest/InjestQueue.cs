@@ -15,7 +15,8 @@ namespace FPVPulse.LocalHost.Injest
         readonly ConcurrentQueue<QueueItem<InjestEvent>> eventQueue = new();
         readonly ConcurrentQueue<QueueItem<InjestRace>> raceQueue = new();
         readonly ConcurrentQueue<QueueItem<InjestPilotResult>> pilotResultQueue = new();
-        readonly SemaphoreSlim signal = new(0);
+		readonly ConcurrentQueue<QueueItem<InjestLeaderboard>> leaderabordQueue = new();
+		readonly SemaphoreSlim signal = new(0);
 
         public bool HasAnyItem => !eventQueue.IsEmpty ||
             !raceQueue.IsEmpty ||
@@ -93,9 +94,9 @@ namespace FPVPulse.LocalHost.Injest
                 Item = pilotResult
             });
             signal.Release();
-        }
+		}
 
-        public bool TryDequeuePilotResult(out string injestId, out InjestPilotResult pilotResult)
+		public bool TryDequeuePilotResult(out string injestId, out InjestPilotResult pilotResult)
         {
             if (pilotResultQueue.TryDequeue(out var item))
             {
@@ -106,9 +107,36 @@ namespace FPVPulse.LocalHost.Injest
             injestId = string.Empty;
             pilotResult = null!;
             return false;
-        }
+		}
 
-        public async Task WaitForAnyAsync(CancellationToken token)
+		public void Enqueue(string injestId, InjestLeaderboard leaderabord)
+		{
+			/*var json = JsonConvert.SerializeObject(pilotResult);
+            logger.LogInformation(injestId);
+            logger.LogInformation(json);*/
+
+			leaderabordQueue.Enqueue(new QueueItem<InjestLeaderboard>
+			{
+				InjestId = injestId,
+				Item = leaderabord
+			});
+			signal.Release();
+		}
+
+		public bool TryDequeueLeaderabord(out string injestId, out InjestLeaderboard leaderabord)
+		{
+			if (leaderabordQueue.TryDequeue(out var item))
+			{
+				injestId = item.InjestId;
+				leaderabord = item.Item;
+				return true;
+			}
+			injestId = string.Empty;
+			leaderabord = null!;
+			return false;
+		}
+
+		public async Task WaitForAnyAsync(CancellationToken token)
         {
             while (!HasAnyItem)
             {

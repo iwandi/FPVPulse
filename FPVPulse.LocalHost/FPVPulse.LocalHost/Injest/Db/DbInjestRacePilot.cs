@@ -44,6 +44,11 @@ namespace FPVPulse.LocalHost.Injest.Db
 				InjestPilotId = racePilot.InjestPilotId;
 				changed = true;
 			}
+			if (racePilot.InjestPilotEntryId != null && !string.IsNullOrWhiteSpace(racePilot.InjestPilotEntryId) && InjestPilotEntryId != racePilot.InjestPilotEntryId)
+			{
+				InjestPilotEntryId = racePilot.InjestPilotEntryId;
+				changed = true;
+			}
 			if (racePilot.InjestName != null && !string.IsNullOrWhiteSpace(racePilot.InjestName) && InjestName != racePilot.InjestName)
             {
                 InjestName = racePilot.InjestName;

@@ -37,8 +37,10 @@ namespace FPVPulse.LocalHost.Injest
                     await ProcessRace(db, injestId, race);
                 else if (queue.TryDequeuePilotResult(out injestId, out var pilotResult))
                     await ProcessPilotResult(db, injestId, pilotResult);
+				else if(queue.TryDequeueLeaderabord(out injestId, out var leaderboard))
+					await ProcessLeaderabord(db, injestId, leaderboard);
 
-                await queue.WaitForAnyAsync(stoppingToken);
+				await queue.WaitForAnyAsync(stoppingToken);
             }
         }
 
@@ -180,5 +182,78 @@ namespace FPVPulse.LocalHost.Injest
             var raceId = race != null ? race.RaceId : -1;
             await signaler.SignalChangeAsync(ChangeGroup.InjestPilotResult, existing.PilotResultId, raceId, existing);
         }
+
+        async Task ProcessLeaderabord(InjestDbContext? db, string injestId, InjestLeaderboard leaderboard)
+        {
+			bool hasChange = false;
+			var existing = await db.Leaderboard.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+				e.InjestEventId == leaderboard.InjestEventId &&
+				e.InjestLeaderboardId == leaderboard.InjestLeaderboardId);
+
+			var @event = await db.Events.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+				e.InjestEventId == leaderboard.InjestEventId);
+
+			if (existing == null)
+			{
+				existing = new DbInjestLeaderboard(injestId, leaderboard, @event);
+				db.Leaderboard.Add(existing);
+				hasChange = true;
+			}
+			else
+				hasChange &= existing.Merge(leaderboard, @event);
+
+			if (hasChange)
+			{
+				var json = JsonConvert.SerializeObject(existing);
+				logger.LogInformation(json);
+
+				await db.SaveChangesAsync();
+			}
+
+			List<DbInjestLeaderboardPilot> existingPilots = new List<DbInjestLeaderboardPilot>();
+			List<DbInjestLeaderboardPilot> changedPilots = new List<DbInjestLeaderboardPilot>();
+			if (leaderboard.Results != null)
+			{
+				foreach (var pilot in leaderboard.Results)
+				{
+					bool pilotHasChanges = false;
+					var existingPilot = await db.LeaderboardPilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+						e.InjestPilotEntryId == pilot.InjestPilotEntryId &&
+						e.InjestLeaderboardId == existing.InjestLeaderboardId);
+
+					if (existingPilot == null)
+					{
+						existingPilot = new DbInjestLeaderboardPilot(injestId, pilot, existing);
+						db.LeaderboardPilots.Add(existingPilot);
+						pilotHasChanges = true;
+					}
+					else
+						pilotHasChanges &= existingPilot.Merge(pilot);
+
+					if (pilotHasChanges)
+					{
+						var pilotJson = JsonConvert.SerializeObject(existingPilot);
+						logger.LogInformation(pilotJson);
+
+						await db.SaveChangesAsync();
+						changedPilots.Add(existingPilot);
+					}
+					existingPilots.Add(existingPilot);
+
+					hasChange &= pilotHasChanges;
+				}
+			}
+
+			if (hasChange)
+			{
+				existing.Results = existingPilots.ToArray();
+
+				var eventId = @event != null ? @event.EventId : -1;
+				await signaler.SignalChangeAsync(ChangeGroup.InjestLeaderboard, existing.LeaderboardId, eventId, existing);
+
+				foreach (var pilot in changedPilots)
+					await signaler.SignalChangeAsync(ChangeGroup.InjestLeaderboardPilot, pilot.LeaderboardId, existing.LeaderboardId, pilot);
+			}
+		}
     }
 }

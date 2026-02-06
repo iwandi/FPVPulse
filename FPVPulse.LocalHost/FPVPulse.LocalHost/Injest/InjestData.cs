@@ -108,6 +108,14 @@ namespace FPVPulse.LocalHost.Injest
             return db.PilotResults.FirstOrDefault(pr => pr.InjestId == injestId &&
                 pr.InjestRaceId == injestRaceId &&
                 pr.InjestPilotId == injestPilotId);
-        }
-    }
+		}
+
+		public static void FillResult(InjestDbContext db, DbInjestLeaderboard? leaderabord)
+		{
+			if (leaderabord != null)
+			{
+				leaderabord.Results = db.LeaderboardPilots.Where(r => r.LeaderboardId == leaderabord.LeaderboardId).ToArray();
+			}
+		}
+	}
 }

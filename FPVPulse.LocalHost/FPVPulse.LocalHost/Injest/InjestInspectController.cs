@@ -134,5 +134,44 @@ namespace FPVPulse.LocalHost.Injest
                 return NotFound();
             return pilotResult;
         }
-    }
+
+		[HttpGet("event/{eventId}/leaderboards")]
+		public IEnumerable<int> GetLeaderboardByRaceType(int eventId)
+		{
+			using var scope = serviceProvider.CreateScope();
+			var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+			return db.Leaderboard.Where(r => r.EventId == eventId).Select(r => r.LeaderboardId).ToArray();
+		}
+
+		[HttpGet("event/{eventId}/leaderboard/{raceType}")]
+		public ActionResult<InjestLeaderboard> GetLeaderboardByRaceType(int eventId, RaceType raceType)
+		{
+			using var scope = serviceProvider.CreateScope();
+			var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+			var leaderabord = db.Leaderboard.Where( (r) => r.EventId == eventId && r.RaceType == raceType).FirstOrDefault();
+
+			if (leaderabord == null)
+				return NotFound();
+
+			InjestData.FillResult(db, leaderabord);
+			return leaderabord;
+		}
+
+		[HttpGet("leaderboard/{leadrboardId}")]
+		public ActionResult<InjestLeaderboard> GetLeaderaboard(int leadrboardId)
+		{
+			using var scope = serviceProvider.CreateScope();
+			var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+			var leaderabord = db.Leaderboard.Find(leadrboardId);
+
+			if (leaderabord == null)
+				return NotFound();
+
+			InjestData.FillResult(db, leaderabord);
+			return leaderabord;
+		}
+	}
 }

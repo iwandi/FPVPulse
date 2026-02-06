@@ -16,8 +16,11 @@
 		InjestPilotResult,
 		InjestPilotResultData,
 
-		InjestPosition,
-		InjestPositionData,
+		InjestLeaderboard,
+		InjestLeaderboardData,
+
+		InjestLeaderboardPilot,
+		InjestLeaderboardPilotData,
 	}
 
     public class ChangeEventArgs<T> : EventArgs
@@ -46,6 +49,7 @@
 		public static string ChangeInjestRaceData = "CIRC";
 		public static string ChangeInjestRacePilotData = "CIRPD";
 		public static string ChangeInjestPoilotResultData = "CIPRD";
-		public static string ChangeInjestPositionData = "CIPD";
+		public static string ChangeInjestLeaderboardData = "CILD";
+		public static string ChangeInjestLeaderboardPilotData = "CILPD";
 	}
 }

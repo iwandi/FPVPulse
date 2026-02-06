@@ -11,8 +11,10 @@ namespace FPVPulse.LocalHost.Injest.Db
         public DbSet<DbInjestRace> Races { get; set; }
         public DbSet<DbInjestRacePilot> RacePilots { get; set; }
         public DbSet<DbInjestPilotResult> PilotResults { get; set; }
+		public DbSet<DbInjestLeaderboard> Leaderboard { get; set; }
+		public DbSet<DbInjestLeaderboardPilot> LeaderboardPilots { get; set; }
 
-        protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+		protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
         {
             optionsBuilder.UseSqlite("Data Source=injest.db");
         }
@@ -24,8 +26,10 @@ namespace FPVPulse.LocalHost.Injest.Db
             modelBuilder.Ignore<InjestRacePilot>();
             modelBuilder.Ignore<InjestPilotResult>();
             modelBuilder.Ignore<InjestLap>();
+			modelBuilder.Ignore<InjestLeaderboard>();
+			modelBuilder.Ignore<InjestLeaderboardPilot>();
 
-            var lapsConverter = new ValueConverter<InjestLap[]?, string?>(
+			var lapsConverter = new ValueConverter<InjestLap[]?, string?>(
                 v => v == null ? null : JsonConvert.SerializeObject(v),
                 v => v == null ? null : JsonConvert.DeserializeObject<InjestLap[]>(v)
             );
@@ -40,6 +44,13 @@ namespace FPVPulse.LocalHost.Injest.Db
 
             modelBuilder.Entity<DbInjestRacePilot>()
                  .HasKey(p => p.RacePilotId);
-        }
+
+			modelBuilder.Entity<DbInjestLeaderboardPilot>()
+				.HasIndex(e => new { e.InjestId, e.InjestLeaderboardId, e.InjestPilotEntryId })
+				.IsUnique();
+
+			modelBuilder.Entity<DbInjestLeaderboardPilot>()
+				 .HasKey(p => p.LeaderboardPilotId);
+		}
     }
 }

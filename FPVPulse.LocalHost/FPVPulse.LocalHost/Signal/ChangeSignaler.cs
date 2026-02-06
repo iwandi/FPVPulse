@@ -12,8 +12,10 @@ namespace FPVPulse.LocalHost.Signal
         public event EventHandler<ChangeEventArgs<InjestRace>>? OnInjestRaceChanged;
 		public event EventHandler<ChangeEventArgs<InjestRacePilot>>? OnInjestRaceDataChanged;
 		public event EventHandler<ChangeEventArgs<InjestPilotResult>>? OnInjestPilotResultChanged;
+		public event EventHandler<ChangeEventArgs<InjestLeaderboard>>? OnInjestLeaderabordChanged;
+		public event EventHandler<ChangeEventArgs<InjestLeaderboardPilot>>? OnInjestLeaderabordPilotChanged;
 
-        readonly IHubContext<ChangeHub> changeHub;
+		readonly IHubContext<ChangeHub> changeHub;
 
         public ChangeSignaler(IHubContext<ChangeHub> changeHub)
         {
@@ -72,14 +74,22 @@ namespace FPVPulse.LocalHost.Signal
 					groupData = ChangeGroup.InjestPilotResultData.ToString();
 					dataMethod = ChangeSignalMessages.ChangeInjestPoilotResultData;
 					break;
-				/*case ChangeGroup.InjestPosition:
-				case ChangeGroup.InjestPositionData:
-					if (change is ChangeEventArgs<InjestPosition> positionArgs)
-						OnInjestPilotResultChanged?.Invoke(this, positionArgs);
-					group = ChangeGroup.InjestPosition.ToString();
-					groupData = ChangeGroup.InjestPositionData.ToString();
-					dataMethod = ChangeSignalMessages.ChangeInjestPositionData;
-					break;*/
+				case ChangeGroup.InjestLeaderboard:
+				case ChangeGroup.InjestLeaderboardData:
+					if (change is ChangeEventArgs<InjestLeaderboard> leaderabordArgs)
+						OnInjestLeaderabordChanged?.Invoke(this, leaderabordArgs);
+					group = ChangeGroup.InjestLeaderboard.ToString();
+					groupData = ChangeGroup.InjestLeaderboardData.ToString();
+					dataMethod = ChangeSignalMessages.ChangeInjestLeaderboardData;
+					break;
+				case ChangeGroup.InjestLeaderboardPilot:
+				case ChangeGroup.InjestLeaderboardPilotData:
+					if (change is ChangeEventArgs<InjestLeaderboardPilot> leaderabordPilotArgs)
+						OnInjestLeaderabordPilotChanged?.Invoke(this, leaderabordPilotArgs);
+					group = ChangeGroup.InjestLeaderboardPilot.ToString();
+					groupData = ChangeGroup.InjestLeaderboardPilotData.ToString();
+					dataMethod = ChangeSignalMessages.ChangeInjestLeaderboardPilotData;
+					break;
 			}
 
 			await changeHub.Clients.Group(group)
