@@ -20,13 +20,16 @@ else if (!events.Any())
 }
 else
 {
-	<select @bind="CurrentEventId">
-		<option>-- Select an event --</option>
+	<div class="event-button-list">
 		@foreach (var ev in events)
 		{
-			<option value="@ev.Id">@ev.Name</option>
-		})
-	</select>
+			<button 
+			class="event-btn @(CurrentEventId == ev.Id ? "selected" : "")"
+			@onclick="() => CurrentEventId = ev.Id">
+				@ev.Name
+			</button>
+		}
+	</div>
 }
 
 @if (CurrentEventId != null)
@@ -43,9 +46,9 @@ else
 	else
 	{
 		@foreach (var kvp in races
-			.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
-			.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
-			.ThenBy(kvp => kvp.Value.SecondOrderPosition))
+															.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
+															.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
+															.ThenBy(kvp => kvp.Value.SecondOrderPosition))
 		{
 			InjestPilotResult[] flatList = null;
 			if (pilotResults.TryGetValue(kvp.Key, out var pilotResult) && pilotResult != null)
@@ -110,7 +113,8 @@ else
 
 	protected override async Task OnInitializedAsync()
 	{
-		events = await Http.GetFromJsonAsync<IndexEntry[]>("api/injest/inspect/eventIndex/");
+		var index = await Http.GetFromJsonAsync<IndexEntry[]>("api/injest/inspect/eventIndex/");
+		await OnEvenListData(index);
 
 		hubConnection = new HubConnectionBuilder()
 			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
@@ -192,6 +196,7 @@ else
 	{
 		//JS.InvokeVoidAsync("console.log", "OnChange", groupName, id, parentId);
 		var group = Enum.Parse<ChangeGroup>(groupName);
+		await OnEventListChange(group, id, parentId);
 		if (IsMachingEvent(group, id, parentId))
 		{
 			currentEvent = await Http.GetFromJsonAsync<InjestEvent>($"api/injest/inspect/event/{CurrentEventId}");
@@ -218,10 +223,42 @@ else
 		}
 	}
 
+	async Task OnEventListChange(ChangeGroup group, int id, int parentId)
+	{
+		if (group == ChangeGroup.InjestEvent)
+		{
+			if (events == null || !events.Any((r) => r.Id == id))
+			{
+				var indices = await Http.GetFromJsonAsync<IndexEntry[]>("api/injest/inspect/eventIndex/");
+				await OnEvenListData(indices);
+				StateHasChanged();				
+			}
+		}
+	}
+
+	async Task OnEvenListData(IndexEntry[]? indices)
+	{
+		JS.InvokeVoidAsync("console.log", "OnEvenListData", indices);
+		events = indices;
+
+		if(CurrentEventId == null && events.Length > 0)
+		{
+			var lastEvent = events.OrderByDescending(e => e.Id).FirstOrDefault();
+			JS.InvokeVoidAsync("console.log", "lastEvent", lastEvent);
+			if(lastEvent != null)
+			{
+				CurrentEventId = lastEvent.Id;
+				JS.InvokeVoidAsync("console.log", "currentEventId", currentEventId);
+			}
+		}
+	}
+
 	private async Task OnChangeEventData(string groupName, int id, int parentId, InjestEvent @event)
 	{
 		//JS.InvokeVoidAsync("console.log", "OnChangeRaceData", groupName, id, parentId, race);
-		if (IsMachingEvent(groupName, id, parentId))
+		var group = Enum.Parse<ChangeGroup>(groupName);
+		await OnEventListChange(group, id, parentId);
+		if (IsMachingEvent(group, id, parentId))
 		{
 			await OnEventData(@event, false);
 		}
