@@ -43,7 +43,7 @@ namespace FPVPulse.LocalHost.Signal
 			switch (change.Group)
             {
                 case ChangeGroup.InjestEvent:
-                case ChangeGroup.InjestEventData:
+				case ChangeGroup.InjestEventData:
 					if (change is ChangeEventArgs<InjestEvent> eventArgs)
 						OnInjestEventChanged?.Invoke(this, eventArgs);
 					group = ChangeGroup.InjestEvent.ToString();
@@ -95,7 +95,7 @@ namespace FPVPulse.LocalHost.Signal
 			await changeHub.Clients.Group(group)
                 .SendAsync(ChangeSignalMessages.Change, group, change.Id, change.ParentId);
 			await changeHub.Clients.Group(groupData)
-				.SendAsync(dataMethod, groupData, change.Id, change.ParentId, change.Data);
+				.SendAsync(dataMethod, change.Id, change.ParentId, change.Data);
 		}
     }
 }

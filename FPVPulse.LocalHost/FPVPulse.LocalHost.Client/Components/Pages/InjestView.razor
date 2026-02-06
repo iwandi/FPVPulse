@@ -46,9 +46,9 @@ else
 	else
 	{
 		@foreach (var kvp in races
-															.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
-															.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
-															.ThenBy(kvp => kvp.Value.SecondOrderPosition))
+									.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
+									.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
+									.ThenBy(kvp => kvp.Value.SecondOrderPosition))
 		{
 			InjestPilotResult[] flatList = null;
 			if (pilotResults.TryGetValue(kvp.Key, out var pilotResult) && pilotResult != null)
@@ -93,9 +93,14 @@ else
 
 	private IndexEntry[]? events;
 	private InjestEvent? currentEvent;
+	private string? pastScollTo;
 	private string? scollTo;
 	private Dictionary<int, InjestRace> races = new();
 	private Dictionary<int, List<(int id, InjestPilotResult result)>> pilotResults = new();
+
+	private object racesLock = new();
+	private object pilotResultsLock = new();
+	private object leaderboardLock = new();
 
 	private int? currentEventId;
 	private int? CurrentEventId
@@ -106,7 +111,7 @@ else
 			if (currentEventId != value)
 			{
 				currentEventId = value;
-				_ = OnCurrentEventChange();
+				_ = InvokeAsync(OnCurrentEventChange);
 			}
 		}
 	}
@@ -114,24 +119,52 @@ else
 	protected override async Task OnInitializedAsync()
 	{
 		var index = await Http.GetFromJsonAsync<IndexEntry[]>("api/injest/inspect/eventIndex/");
-		await OnEvenListData(index);
+		if(UpdateEventListByIndex(index))
+		{
+			await LoadRacesAsync();
+			StateHasChanged();
+		}
 
 		hubConnection = new HubConnectionBuilder()
 			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
 			.WithAutomaticReconnect()
 			.Build();
 
-		hubConnection.On<string, int, int>(ChangeSignalMessages.Change, OnChange);
-		hubConnection.On<string, int, int, InjestEvent>(ChangeSignalMessages.ChangeInjestEventData, OnChangeEventData);
-		hubConnection.On<string, int, int, InjestRace>(ChangeSignalMessages.ChangeInjestRaceData, OnChangeRaceData);
-		hubConnection.On<string, int, int, InjestPilotResult>(ChangeSignalMessages.ChangeInjestPoilotResultData, OnChangePilotResultData);
+		hubConnection.On<int, int, InjestEvent>(ChangeSignalMessages.ChangeInjestEventData, OnSignalChangeEventData);
+		hubConnection.On<int, int, InjestRace>(ChangeSignalMessages.ChangeInjestRaceData, OnSignalChangeRaceData);
+		hubConnection.On<int, int, InjestPilotResult>(ChangeSignalMessages.ChangeInjestPoilotResultData, OnSignalChangePilotResultData);
+		hubConnection.On<int, int, InjestLeaderboard>(ChangeSignalMessages.ChangeInjestPoilotResultData, OnSignalChangeLeaderboardData);
 		await hubConnection.StartAsync();
-		//await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestEvent);
 		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestEventData);
-		//await hubConnection.InvokeAsync("Subscribe", ChangeGroup.InjestRace);
 		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestRaceData);
-		//await hubConnection.InvokeAsync("Subscribe", ChangeGroup.InjestPilotResult);
 		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestPilotResultData);
+	}
+
+	bool UpdateEventListByIndex(IndexEntry[]? index)
+	{
+		bool hasChange = false;
+		if (index == null && events != null)
+		{
+			events = null;
+			CurrentEventId = null;
+		}
+		else if (events == null)
+			events = index;
+		else if (index != null)
+			hasChange = events.Concat(index).GroupBy(e => e.Id).Any(g => g.Count() > 1);
+
+		events = index;
+
+		if (CurrentEventId == null && events != null && events.Length > 0)
+		{
+			var lastEvent = events.OrderByDescending(e => e.Id).FirstOrDefault();
+			if (lastEvent != null)
+			{
+				CurrentEventId = lastEvent.Id;
+				hasChange = true;
+			}
+		}
+		return hasChange;
 	}
 
 	private async Task OnCurrentEventChange()
@@ -142,13 +175,15 @@ else
 		if (CurrentEventId == null)
 		{
 			currentEvent = null;
-			StateHasChanged();
 		}
 		else
 		{
-			currentEvent = await Http.GetFromJsonAsync<InjestEvent>($"api/injest/inspect/event/{CurrentEventId}");
-			OnEventData(currentEvent, true);
+			currentEvent = await Http.GetFromJsonAsync<InjestEvent>($"api/injest/inspect/event/{CurrentEventId}"); 
+			if (currentEvent != null && currentEvent.CurrentInjestRaceId != null)
+				scollTo = $"race-injest-id-{currentEvent.CurrentInjestRaceId}";
+			await LoadRacesAsync();
 		}
+		await InvokeAsync(StateHasChanged);
 	}
 
 	private async Task LoadRacesAsync()
@@ -168,7 +203,7 @@ else
 		List<Task> loadTasks = new();
 		foreach (var raceId in raceIds)
 		{
-			var loadTask = Task.Run(async () =>
+			//var loadTask = Task.Run(async () =>
 			{
 				var race = await Http.GetFromJsonAsync<InjestRace>($"api/injest/inspect/race/{raceId}");
 				StoreInjestRace(raceId, race);
@@ -184,138 +219,35 @@ else
 						StoreInjestPilotResult(raceId, resultId, pilotResult);
 					}
 				}
-			});
-			loadTasks.Add(loadTask);
+			}//);
+			//loadTasks.Add(loadTask);
 		}
 		await Task.WhenAll(loadTasks);
 
 		StateHasChanged();
 	}
 
-	private async Task OnChange(string groupName, int id, int parentId)
-	{
-		//JS.InvokeVoidAsync("console.log", "OnChange", groupName, id, parentId);
-		var group = Enum.Parse<ChangeGroup>(groupName);
-		await OnEventListChange(group, id, parentId);
-		if (IsMachingEvent(group, id, parentId))
-		{
-			currentEvent = await Http.GetFromJsonAsync<InjestEvent>($"api/injest/inspect/event/{CurrentEventId}");
-			await OnEventData(currentEvent, false);
-		}
-		else if (IsMachingRace(group, id, parentId))
-		{
-			var raceId = id;
-			var race = await Http.GetFromJsonAsync<InjestRace>($"api/injest/inspect/race/{raceId}");
-			StoreInjestRace(raceId, race);
-			StateHasChanged();
-		}
-		else if (IsMachingPilotResult(group, id, parentId))
-		{
-			var raceId = parentId;
-			var resultId = id;
-			var pilotResult = await Http.GetFromJsonAsync<InjestPilotResult>($"api/injest/inspect/race/result/{resultId}");
-
-			if (pilotResult != null)
-			{
-				StoreInjestPilotResult(raceId, resultId, pilotResult);
-				StateHasChanged();
-			}
-		}
-	}
-
-	async Task OnEventListChange(ChangeGroup group, int id, int parentId)
-	{
-		if (group == ChangeGroup.InjestEvent)
-		{
-			if (events == null || !events.Any((r) => r.Id == id))
-			{
-				var indices = await Http.GetFromJsonAsync<IndexEntry[]>("api/injest/inspect/eventIndex/");
-				await OnEvenListData(indices);
-				StateHasChanged();				
-			}
-		}
-	}
-
-	async Task OnEvenListData(IndexEntry[]? indices)
-	{
-		JS.InvokeVoidAsync("console.log", "OnEvenListData", indices);
-		events = indices;
-
-		if(CurrentEventId == null && events.Length > 0)
-		{
-			var lastEvent = events.OrderByDescending(e => e.Id).FirstOrDefault();
-			JS.InvokeVoidAsync("console.log", "lastEvent", lastEvent);
-			if(lastEvent != null)
-			{
-				CurrentEventId = lastEvent.Id;
-				JS.InvokeVoidAsync("console.log", "currentEventId", currentEventId);
-			}
-		}
-	}
-
-	private async Task OnChangeEventData(string groupName, int id, int parentId, InjestEvent @event)
+	private void OnSignalChangeEventData(int id, int parentId, InjestEvent @event)
 	{
 		//JS.InvokeVoidAsync("console.log", "OnChangeRaceData", groupName, id, parentId, race);
-		var group = Enum.Parse<ChangeGroup>(groupName);
-		await OnEventListChange(group, id, parentId);
-		if (IsMachingEvent(group, id, parentId))
+		if (currentEventId == id)
 		{
-			await OnEventData(@event, false);
+			currentEvent = @event;
+			if (currentEvent != null && currentEvent.CurrentInjestRaceId != null)
+				scollTo = $"race-injest-id-{currentEvent.CurrentInjestRaceId}";
+
+			InvokeAsync(StateHasChanged);
 		}
 	}
 
-	bool IsMachingEvent(string groupName, int id, int parentId)
-	{
-		var group = Enum.Parse<ChangeGroup>(groupName);
-		return IsMachingEvent(group, id, parentId);
-	}
-
-	bool IsMachingEvent(ChangeGroup group, int id, int parentId)
-	{
-		return (group == ChangeGroup.InjestEventData ||
-			group == ChangeGroup.InjestEventData) && id == CurrentEventId;
-	}
-
-	async Task OnEventData(InjestEvent @event, bool loadRaces)
-	{
-		var nextScollTo = "";
-
-		currentEvent = @event;
-		if (currentEvent != null && currentEvent.CurrentInjestRaceId != null)
-			nextScollTo = $"race-injest-id-{currentEvent.CurrentInjestRaceId}";
-
-		if (loadRaces)
-			await LoadRacesAsync();
-
-		StateHasChanged();
-
-		if (!string.IsNullOrEmpty(nextScollTo) && scollTo != nextScollTo)
-		{
-			scollTo = nextScollTo;
-			await JS.InvokeVoidAsync("scrollToElementById", scollTo);
-		}
-	}
-
-	bool IsMachingRace(string groupName, int id, int parentId)
-	{
-		var group = Enum.Parse<ChangeGroup>(groupName);
-		return IsMachingRace(group, id, parentId);
-	}
-
-	bool IsMachingRace(ChangeGroup group, int id, int parentId)
-	{
-		return (group == ChangeGroup.InjestRacePilot ||
-			group == ChangeGroup.InjestRacePilotData) && parentId == CurrentEventId;
-	}
-
-	private async Task OnChangeRaceData(string groupName, int id, int parentId, InjestRace race)
+	private void OnSignalChangeRaceData(int id, int parentId, InjestRace race)
 	{
 		//JS.InvokeVoidAsync("console.log", "OnChangeRaceData", groupName, id, parentId, race);
-		if (IsMachingEvent(groupName, id, parentId))
+		if (currentEventId == parentId)
 		{
 			var raceId = id;
 			StoreInjestRace(raceId, race);
-			StateHasChanged();
+			InvokeAsync(StateHasChanged);
 		}
 	}
 
@@ -331,10 +263,10 @@ else
 			group == ChangeGroup.InjestPilotResultData) && races.ContainsKey(parentId);
 	}
 
-	private async Task OnChangePilotResultData(string groupName, int id, int parentId, InjestPilotResult pilotResult)
+	private void OnSignalChangePilotResultData(int id, int parentId, InjestPilotResult pilotResult)
 	{
 		//JS.InvokeVoidAsync("console.log", "OnChangePilotResultData", groupName, id, parentId, pilotResult);
-		if (IsMachingPilotResult(groupName, id, parentId))
+		if (races.ContainsKey(parentId))
 		{
 			var raceId = parentId;
 			var resultId = id;
@@ -342,34 +274,55 @@ else
 			if (pilotResult != null)
 			{
 				StoreInjestPilotResult(raceId, resultId, pilotResult);
-				StateHasChanged();
+				InvokeAsync(StateHasChanged);
 			}
 		}
 	}
 
+	void OnSignalChangeLeaderboardData(int id, int parentId, InjestLeaderboard data)
+	{
+		// TODO
+	}
+
 	void StoreInjestRace(int raceId, InjestRace race)
 	{
-		if (race != null)
-			races[raceId] = race;
-		else if (races.ContainsKey(raceId))
-			races.Remove(raceId);
+		lock (racesLock)
+		{
+			if (race != null)
+				races[raceId] = race;
+			else if (races.ContainsKey(raceId))
+				races.Remove(raceId);
+		}
 	}
 
 	void StoreInjestPilotResult(int raceId, int resultId, InjestPilotResult pilotResult)
 	{
-		if (!pilotResults.TryGetValue(raceId, out var resultsList))
+		lock (pilotResultsLock)
 		{
-			resultsList = new List<(int id, InjestPilotResult result)>();
-			resultsList.Add((resultId, pilotResult));
-			pilotResults.Add(raceId, resultsList);
-		}
-		else
-		{
-			int existingIndex = resultsList.FindIndex(r => r.id == resultId);
-			if (existingIndex >= 0)
-				resultsList[existingIndex] = (resultId, pilotResult);
-			else
+			if (!pilotResults.TryGetValue(raceId, out var resultsList))
+			{
+				resultsList = new List<(int id, InjestPilotResult result)>();
 				resultsList.Add((resultId, pilotResult));
+				pilotResults.Add(raceId, resultsList);
+			}
+			else
+			{
+				int existingIndex = resultsList.FindIndex(r => r.id == resultId);
+				if (existingIndex >= 0)
+					resultsList[existingIndex] = (resultId, pilotResult);
+				else
+					resultsList.Add((resultId, pilotResult));
+			}
+		}
+	}
+
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		//await JS.InvokeVoidAsync("console.log", "OnAfterRenderAsync", firstRender, scollTo, pastScollTo);
+		if (pastScollTo != scollTo)
+		{
+			pastScollTo = scollTo;
+			await JS.InvokeVoidAsync("scrollToElementById", scollTo);
 		}
 	}
 }
