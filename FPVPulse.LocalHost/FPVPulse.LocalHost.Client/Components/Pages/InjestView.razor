@@ -81,7 +81,7 @@ else
 				<h2>[NEXT]</h2>
 				if (currentEvent.NextRaceSheduledStartTime != null)
 				{
-					<p>Start: @currentEvent.NextRaceSheduledStartTime?.ToLocalTime()
+					<p class="race-schedule-info">Start: @currentEvent.NextRaceSheduledStartTime?.ToLocalTime()
 						@if (currentEvent.NextRaceSheduledStartTime > DateTime.UtcNow)
 						{
 						<text> | In: @TimeSpan.FromSeconds(Convert.ToUInt64(currentEvent.NextRaceSheduledStartSeconds)).ToString()</text>

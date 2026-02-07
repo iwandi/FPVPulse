@@ -57,6 +57,20 @@ p {
     margin: 0.5rem 0;
 }
 
+/* Scheduled time styling */
+.race-schedule-info {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: #fff3cd;
+    border-left: 3px solid #d68910;
+    color: #856404;
+    font-weight: 400;
+    font-size: 0.8125rem;
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 2px;
+}
+
 /* Current/Next race badges */
 h2 {
     font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
@@ -77,16 +91,6 @@ h2:first-of-type {
 h2:nth-of-type(2) {
     background: #d68910;
     color: white;
-}
-
-/* Scheduled time styling */
-p {
-    background: #fff3cd;
-    border-left-color: #d68910;
-    color: #856404;
-    font-weight: 400;
-    display: inline-block;
-    margin-left: 0.5rem;
 }
 
 /* Responsive design */
