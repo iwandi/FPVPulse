@@ -1,0 +1,98 @@
+/* Leaderboard heading */
+h3 {
+    color: #2c3e50;
+    font-weight: 700;
+    margin: 2rem 0 1rem;
+    padding: 0.75rem 1rem;
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    color: white;
+    border-radius: 8px;
+    display: inline-block;
+    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+}
+
+/* Leaderboard table */
+table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-bottom: 2rem;
+    background: white;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+table th {
+    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+    color: white;
+    padding: 0.875rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 3px solid #8e44ad;
+}
+
+table td {
+    padding: 0.875rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Highlight position column */
+table td:nth-child(4) {
+    font-weight: 600;
+    color: #2c3e50;
+    font-size: 1rem;
+}
+
+/* Position badge styling */
+table tr:first-child td:nth-child(4) {
+    color: #f39c12;
+    font-size: 1.125rem;
+}
+
+table tr:nth-child(2) td:nth-child(4) {
+    color: #95a5a6;
+    font-size: 1.125rem;
+}
+
+table tr:nth-child(3) td:nth-child(4) {
+    color: #cd7f32;
+    font-size: 1.125rem;
+}
+
+/* Hover effect */
+table tr:hover {
+    background: #f4ecf7;
+}
+
+/* Alternating row colors */
+table tr:nth-child(even) {
+    background: #faf8fb;
+}
+
+table tr:nth-child(even):hover {
+    background: #f4ecf7;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    table {
+        font-size: 0.75rem;
+    }
+
+    table th,
+    table td {
+        padding: 0.5rem;
+    }
+
+    h3 {
+        font-size: 1.25rem;
+        padding: 0.5rem 0.75rem;
+    }
+}

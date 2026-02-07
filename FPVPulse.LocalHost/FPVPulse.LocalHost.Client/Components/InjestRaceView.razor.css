@@ -1,0 +1,111 @@
+/* Race display container */
+.race-display {
+    background: #ffffff;
+    border-radius: 8px;
+    padding: 1.5rem;
+}
+
+/* Race header information */
+.race-display strong {
+    font-size: 1.25rem;
+    color: #2c3e50;
+    display: block;
+    margin-bottom: 0.75rem;
+}
+
+.race-display span {
+    display: inline-block;
+    margin-right: 1rem;
+    padding: 0.25rem 0.75rem;
+    background: #e9ecef;
+    border-radius: 4px;
+    font-size: 0.875rem;
+    color: #495057;
+    margin-bottom: 0.5rem;
+}
+
+/* Table styling */
+.race-display table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 1.5rem;
+    background: white;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+.race-display table th {
+    background: linear-gradient(135deg, #3498db, #2980b9);
+    color: white;
+    padding: 0.75rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-bottom: 2px solid #2980b9;
+}
+
+.race-display table td {
+    padding: 0.75rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+    font-size: 0.875rem;
+}
+
+.race-display table tr:last-child td {
+    border-bottom: none;
+}
+
+.race-display table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Alternating row colors for better readability */
+.race-display table tr:nth-child(even) {
+    background: #f8f9fa;
+}
+
+.race-display table tr:nth-child(even):hover {
+    background: #e9ecef;
+}
+
+/* Empty state */
+.race-display em {
+    display: block;
+    padding: 2rem;
+    text-align: center;
+    color: #6c757d;
+    font-style: normal;
+    background: #f8f9fa;
+    border-radius: 6px;
+    border: 2px dashed #dee2e6;
+}
+
+/* Responsive table on smaller screens */
+@media (max-width: 1200px) {
+    .race-display table {
+        font-size: 0.75rem;
+    }
+
+    .race-display table th,
+    .race-display table td {
+        padding: 0.5rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .race-display {
+        padding: 1rem;
+        overflow-x: auto;
+    }
+
+    .race-display table {
+        min-width: 800px;
+    }
+
+    .race-display span {
+        display: block;
+        margin-right: 0;
+        margin-bottom: 0.5rem;
+    }
+}
