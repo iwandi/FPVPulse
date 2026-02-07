@@ -423,8 +423,13 @@ namespace FPVPulse.Ingest.RaceVision
                     var positionChange = GetInt(estimatedPosition["PositionChange"]);
                     var bestSeedingResult = GetString(estimatedPosition["BestSeedingResult"]);
                     var tieBreaker = GetFloat(estimatedPosition["TieBreaker"]);
+                    var isInRace = GetBool(estimatedPosition["IsInRace"]);
 
-                    if (driverLID == null)
+					LeaderboardPilotFlag flags = LeaderboardPilotFlag.Unknown;
+                    if(isInRace.HasValue && isInRace.Value)
+					    flags |= LeaderboardPilotFlag.InCurrentRace;
+
+					if (driverLID == null)
                         continue;
 
 					pilots.Add(new InjestLeaderboardPilot
@@ -437,6 +442,7 @@ namespace FPVPulse.Ingest.RaceVision
                         PositionDelta = positionChange,
 
                         PositionReason = bestSeedingResult,
+                        Flags = flags,
 					});
 				}
             }

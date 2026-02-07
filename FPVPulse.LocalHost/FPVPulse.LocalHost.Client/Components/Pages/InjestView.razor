@@ -45,11 +45,21 @@ else
 	}
 	else
 	{
+		var lastRaceType = RaceType.Unknown;
 		@foreach (var kvp in races
-																							.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
-																							.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
-																							.ThenBy(kvp => kvp.Value.SecondOrderPosition))
+			.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
+			.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
+			.ThenBy(kvp => kvp.Value.SecondOrderPosition))
 		{
+			if (kvp.Value.RaceType != lastRaceType && kvp.Value.RaceType.HasValue)
+			{
+				lastRaceType = kvp.Value.RaceType.Value;
+				if (leaderboards.TryGetValue(lastRaceType, out var leaderboard) && leaderboard != null)
+				{
+					<InjestLeaderboardView @key="lastRaceType" Leaderboard="leaderboard"/>
+				}
+			}
+
 			InjestPilotResult[] flatList = null;
 			if (pilotResults.TryGetValue(kvp.Key, out var pilotResult) && pilotResult != null)
 			{
@@ -134,11 +144,12 @@ else
 		hubConnection.On<int, int, InjestEvent>(ChangeSignalMessages.ChangeInjestEventData, OnSignalChangeEventData);
 		hubConnection.On<int, int, InjestRace>(ChangeSignalMessages.ChangeInjestRaceData, OnSignalChangeRaceData);
 		hubConnection.On<int, int, InjestPilotResult>(ChangeSignalMessages.ChangeInjestPoilotResultData, OnSignalChangePilotResultData);
-		hubConnection.On<int, int, InjestLeaderboard>(ChangeSignalMessages.ChangeInjestPoilotResultData, OnSignalChangeLeaderboardData);
+		hubConnection.On<int, int, InjestLeaderboard>(ChangeSignalMessages.ChangeInjestLeaderboardData, OnSignalChangeLeaderboardData);
 		await hubConnection.StartAsync();
 		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestEventData);
 		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestRaceData);
 		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestPilotResultData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestLeaderboardData);
 	}
 
 	bool UpdateEventListByIndex(IndexEntry[]? index)
@@ -306,7 +317,10 @@ else
 		{
 			var raceType = leaderboard.RaceType;
 			if (raceType.HasValue)
+			{
 				StoreInjestLeaderabord(raceType.Value, leaderboard);
+				InvokeAsync(StateHasChanged);
+			}
 		}
 	}
 

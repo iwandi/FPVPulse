@@ -83,7 +83,7 @@ namespace FPVPulse.LocalHost.Injest
                 hasChange = true;
             }
             else
-                hasChange &= existing.Merge(race, @event);
+                hasChange |= existing.Merge(race, @event);
 
             if(hasChange)
             {
@@ -108,10 +108,10 @@ namespace FPVPulse.LocalHost.Injest
                     {
                         existingPilot = new DbInjestRacePilot(injestId, pilot, existing);
                         db.RacePilots.Add(existingPilot);
-                        pilotHasChanges = true;
+                        pilotHasChanges |= true;
                     }
                     else
-                        pilotHasChanges &= existingPilot.Merge(pilot);
+                        pilotHasChanges |= existingPilot.Merge(pilot);
 
                     if(pilotHasChanges)
                     {
@@ -123,7 +123,7 @@ namespace FPVPulse.LocalHost.Injest
 					}
 					existingPilots.Add(existingPilot);
 
-					hasChange &= pilotHasChanges;
+					hasChange |= pilotHasChanges;
                 }
             }
 
@@ -211,7 +211,7 @@ namespace FPVPulse.LocalHost.Injest
 				hasChange = true;
 			}
 			else
-				hasChange &= existing.Merge(leaderboard, @event);
+				hasChange |= existing.Merge(leaderboard, @event);
 
 			if (hasChange)
 			{
@@ -252,10 +252,10 @@ namespace FPVPulse.LocalHost.Injest
 					{
 						existingPilot = new DbInjestLeaderboardPilot(injestId, pilot, existing);
 						db.LeaderboardPilots.Add(existingPilot);
-						pilotHasChanges = true;
+						pilotHasChanges |= true;
 					}
 					else
-						pilotHasChanges &= existingPilot.Merge(pilot);
+						pilotHasChanges |= existingPilot.Merge(pilot);
 
 					if (pilotHasChanges)
 					{
@@ -267,7 +267,7 @@ namespace FPVPulse.LocalHost.Injest
 					}
 					existingPilots.Add(existingPilot);
 
-					hasChange &= pilotHasChanges;
+					hasChange |= pilotHasChanges;
 				}
 			}
 
