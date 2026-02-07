@@ -1,0 +1,9 @@
+﻿@page "/event/{eventId}/pilot/{pilotId}"
+<h3>Event Pilot View</h3>
+
+@code {
+    [Parameter]
+    public int eventId { get; set; }
+    [Parameter]
+    public int pilotId { get; set; }
+}

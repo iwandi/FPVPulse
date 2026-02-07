@@ -1,0 +1,56 @@
+﻿using FPVPulse.Ingest;
+using FPVPulse.LocalHost.Client;
+using FPVPulse.LocalHost.Injest.Db;
+using FPVPulse.LocalHost.Signal;
+using System.Collections.Concurrent;
+
+namespace FPVPulse.LocalHost.Generator
+{
+	public abstract class BaseTransformer<T> : BackgroundService
+	{
+		readonly IServiceProvider serviceProvider;
+		readonly ChangeSignaler changeSignaler;
+
+		ConcurrentQueue<ChangeEventArgs<T>> queue = new ConcurrentQueue<ChangeEventArgs<T>>();
+		readonly SemaphoreSlim signal = new(0);
+
+		public BaseTransformer(ChangeSignaler changeSignaler, IServiceProvider serviceProvider)
+		{
+			this.changeSignaler = changeSignaler;
+			this.serviceProvider = serviceProvider;
+		}
+
+		protected void OnChanged(object? sender, ChangeEventArgs<T> @event)
+		{
+			queue.Enqueue(@event);
+		}
+
+		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+		{
+			using var scope = serviceProvider.CreateScope();
+			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
+			var injestDb = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+			while (!stoppingToken.IsCancellationRequested)
+			{
+				try
+				{
+					if (queue.TryDequeue(out var @event))
+					{
+						await Process(db, injestDb, @event.Data, @event.Id, @event.ParentId);
+					}
+
+					await signal.WaitAsync(stoppingToken);
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Error in Transformer: {ex}");
+				}
+			}
+		}
+
+		public abstract void Bind(ChangeSignaler changeSignaler);
+
+		protected abstract Task Process(EventDbContext db, InjestDbContext injestDb, T data, int id, int parentId);
+	}
+}

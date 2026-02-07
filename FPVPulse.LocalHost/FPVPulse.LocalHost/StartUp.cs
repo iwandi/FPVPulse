@@ -26,8 +26,9 @@ namespace FPVPulse.LocalHost
                 builder.Services.AddSignalR();
 
                 builder.Services.AddDbContext<InjestDbContext>();
+                builder.Services.AddDbContext<EventDbContext>();
 
-                builder.Services.AddSingleton<ChangeSignaler>();
+				builder.Services.AddSingleton<ChangeSignaler>();
 
                 builder.Services.AddSingleton<InjestData>();
                 builder.Services.AddSingleton<InjestQueue>();
