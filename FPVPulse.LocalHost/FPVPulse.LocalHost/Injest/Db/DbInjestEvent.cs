@@ -72,6 +72,13 @@ namespace FPVPulse.LocalHost.Injest.Db
 				NextRaceSheduledStartSeconds = @event.NextRaceSheduledStartSeconds;
 				changed = true;
 			}
+
+			// Consistency
+			if (NextInjestRaceId == CurrentInjestRaceId)
+			{
+                NextInjestRaceId = null;
+                changed = true;
+			}
 			return changed;
         }
     }
