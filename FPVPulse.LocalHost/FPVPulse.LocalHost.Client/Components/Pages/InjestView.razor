@@ -74,18 +74,17 @@ else
 				<span id="@raceInjestElementId" />
 				@if(currentEvent.CurrentInjestRaceId == kvp.Value.InjestRaceId)
 				{
-					<h2>🏁 Current Race</h2>
+					<h2>[CURRENT]</h2>
 				}
 				else if (currentEvent.NextInjestRaceId == kvp.Value.InjestRaceId)
 				{
-					<h2>⏱️ Next Race</h2>
+					<h2>[NEXT]</h2>
 					if (currentEvent.NextRaceSheduledStartTime != null)
 					{
-						<p>Scheduled Start Time: 
-							@currentEvent.NextRaceSheduledStartTime?.ToLocalTime()
+						<p>Start: @currentEvent.NextRaceSheduledStartTime?.ToLocalTime()
 							@if (currentEvent.NextRaceSheduledStartTime > DateTime.UtcNow)
 							{
-							In: @TimeSpan.FromSeconds(Convert.ToUInt64(currentEvent.NextRaceSheduledStartSeconds)).ToString();
+							 | In: @TimeSpan.FromSeconds(Convert.ToUInt64(currentEvent.NextRaceSheduledStartSeconds)).ToString()
 							}
 						</p>
 					}
