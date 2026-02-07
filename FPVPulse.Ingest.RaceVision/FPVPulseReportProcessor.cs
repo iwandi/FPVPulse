@@ -171,7 +171,26 @@ namespace FPVPulse.Ingest.RaceVision
             }
         }
 
-        void HandleLiveRaceState(string json)
+        int RoundDisplayToNumber(string? value)
+		{
+            int numberStartIndex = 0;
+			for (int i = 0; i < value?.Length; i++)
+			{
+				if (char.IsDigit(value[i]))
+				{
+					numberStartIndex = i;
+					break;
+				}
+			}
+			if (numberStartIndex >= value?.Length)
+				return 0;
+            var numberString = value?.Substring(numberStartIndex);
+			if (int.TryParse(numberString, out var number))
+				return number;
+			return 0;
+		}
+
+		void HandleLiveRaceState(string json)
         {
             if (!IsValidEvent)
                 return;
@@ -218,7 +237,8 @@ namespace FPVPulse.Ingest.RaceVision
                         InjestName = raceClassInformation,
 
                         RaceType = raceType,
-                        FirstOrderPoistion = raceOrderNumber,
+                        FirstOrderPoistion = raceType == RaceType.Mains ? 0 : null,
+                        SecondOrderPosition = raceOrderNumber,
                     });
 
                     var nextRaceId = raceLID.Value + 1;
@@ -408,6 +428,10 @@ namespace FPVPulse.Ingest.RaceVision
             var eventId = currentEventId;
             var raceType = currentRaceType;
 
+            if(!(raceType == RaceType.Practice ||
+                raceType == RaceType.Qualifying))
+				return;
+
 			var jObject = JObject.Parse(json);
 
 			var pilots = new List<InjestLeaderboardPilot>();
@@ -574,7 +598,8 @@ namespace FPVPulse.Ingest.RaceVision
                         InjestName = raceInformation,
 
                         RaceType = RoundDisplayToRaceType(roundDisplay),
-                        FirstOrderPoistion = orderNumber,
+                        FirstOrderPoistion = RoundDisplayToNumber(roundDisplay),
+                        SecondOrderPosition = orderNumber,
 
                         Pilots = pilots.ToArray(),
                     });
@@ -618,8 +643,14 @@ namespace FPVPulse.Ingest.RaceVision
                 return null;
 
             var tokenValue = token.ToString();
+			if (tokenValue.Contains(":") && TryGetTimeSpawn(tokenValue, out var timeSpan))
+            {
+                var totalSeconds = Convert.ToSingle(timeSpan.TotalSeconds);
+                var ms = timeSpan.Milliseconds / 1000f;
+				return totalSeconds + ms;
+			}
 
-            if (float.TryParse(tokenValue, out var value))
+			if (float.TryParse(tokenValue, out var value))
                 return value;
 
             return null;
@@ -631,8 +662,10 @@ namespace FPVPulse.Ingest.RaceVision
                 return null;
 
             var tokenValue = token.ToString();
+			if (tokenValue.Contains(":") && TryGetTimeSpawn(tokenValue, out var timeSpan))
+				return Convert.ToInt32(timeSpan.TotalSeconds);
 
-            if (int.TryParse(tokenValue, out var value))
+			if (int.TryParse(tokenValue, out var value))
                 return value;
 
             return null;
@@ -648,12 +681,33 @@ namespace FPVPulse.Ingest.RaceVision
             return null;
         }
 
+        bool TryGetTimeSpawn(string value, out TimeSpan timeSpan)
+        {
+            if (TimeSpan.TryParse(value, out timeSpan))
+                return true;
+			if (TimeSpan.TryParseExact(value, @"m\:s\.FFF",
+				System.Globalization.CultureInfo.InvariantCulture, out timeSpan))
+				return true;
+			if (TimeSpan.TryParseExact(value, @"mm\:ss\.FFF",
+				System.Globalization.CultureInfo.InvariantCulture, out timeSpan))
+				return true;
+			if (TimeSpan.TryParseExact(value, @"h\:m\:s\.FFF",
+				System.Globalization.CultureInfo.InvariantCulture, out timeSpan))
+				return true;
+			if (TimeSpan.TryParseExact(value, @"hh\:mm\:ss\.FFF",
+				System.Globalization.CultureInfo.InvariantCulture, out timeSpan))
+                return true;
+
+			timeSpan = default(TimeSpan);
+            return false;
+		}
+
         TimeSpan? GetTimeSpan(JToken? token)
         {
             if (token == null || token.Type == JTokenType.Null)
                 return null;
             var tokenValue = token.ToString();
-            if (TimeSpan.TryParse(tokenValue, out var value))
+            if (TryGetTimeSpawn(tokenValue, out var value))
                 return value;
             return null;
         }
