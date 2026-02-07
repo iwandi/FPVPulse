@@ -1,0 +1,101 @@
+/* Leaderboard display container */
+.leaderboard-display {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: #ffffff;
+    border-radius: 4px;
+    padding: 0.5rem;
+    margin-bottom: 0.25rem;
+}
+
+/* Leaderboard heading */
+.leaderboard-display h3 {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 0.9375rem;
+    margin: 0 0 0.5rem 0;
+    padding-bottom: 0.25rem;
+    border-bottom: 1px solid #3498db;
+}
+
+/* Leaderboard table */
+.leaderboard-display table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 0.5rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    font-size: 0.8125rem;
+}
+
+.leaderboard-display table th {
+    background: #3498db;
+    color: white;
+    padding: 0.3rem 0.5rem;
+    text-align: left;
+    font-weight: 600;
+    font-size: 0.75rem;
+    border-bottom: 1px solid #2980b9;
+    line-height: 1.2;
+}
+
+.leaderboard-display table td {
+    padding: 0.3rem 0.5rem;
+    border-bottom: 1px solid #e9ecef;
+    color: #495057;
+    line-height: 1.3;
+}
+
+.leaderboard-display table tr:last-child td {
+    border-bottom: none;
+}
+
+/* Highlight position column */
+.leaderboard-display table td:nth-child(4) {
+    font-weight: 600;
+    color: #2c3e50;
+}
+
+/* Position badge styling - Gold, Silver, Bronze */
+.leaderboard-display table tbody tr:nth-child(1) td:nth-child(4) {
+    color: #f39c12;
+}
+
+.leaderboard-display table tbody tr:nth-child(2) td:nth-child(4) {
+    color: #95a5a6;
+}
+
+.leaderboard-display table tbody tr:nth-child(3) td:nth-child(4) {
+    color: #cd7f32;
+}
+
+/* Hover effect */
+.leaderboard-display table tr:hover {
+    background: #f8f9fa;
+}
+
+/* Responsive design */
+@media (max-width: 1200px) {
+    .leaderboard-display table {
+        font-size: 0.75rem;
+    }
+
+    .leaderboard-display table th,
+    .leaderboard-display table td {
+        padding: 0.25rem 0.4rem;
+    }
+}
+
+@media (max-width: 768px) {
+    .leaderboard-display {
+        padding: 0.5rem;
+        overflow-x: auto;
+    }
+
+    .leaderboard-display table {
+        min-width: 600px;
+    }
+
+    .leaderboard-display h3 {
+        font-size: 0.875rem;
+    }
+}

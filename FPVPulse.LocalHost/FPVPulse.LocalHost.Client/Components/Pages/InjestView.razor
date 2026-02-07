@@ -70,30 +70,27 @@ else
 			var raceElementId = $"race-id-{kvp.Key}";
 			var raceInjestElementId = $"race-injest-id-{kvp.Value.InjestRaceId}";
 
-			<div id = "@raceElementId" >
-				<span id = "@raceInjestElementId" />
-				@if(currentEvent.CurrentInjestRaceId == kvp.Value.InjestRaceId)
+			<span id="@raceElementId" />
+			<span id="@raceInjestElementId" />
+			@if(currentEvent.CurrentInjestRaceId == kvp.Value.InjestRaceId)
+			{
+				<h2>[CURRENT]</h2>
+			}
+			else if (currentEvent.NextInjestRaceId == kvp.Value.InjestRaceId)
+			{
+				<h2>[NEXT]</h2>
+				if (currentEvent.NextRaceSheduledStartTime != null)
 				{
-					<h2>Current Race</h2>
+					<p class="race-schedule-info">Start: @currentEvent.NextRaceSheduledStartTime?.ToLocalTime()
+						@if (currentEvent.NextRaceSheduledStartTime > DateTime.UtcNow)
+						{
+						<text> | In: @TimeSpan.FromSeconds(Convert.ToUInt64(currentEvent.NextRaceSheduledStartSeconds)).ToString()</text>
+						}
+					</p>
 				}
-				else if (currentEvent.NextInjestRaceId == kvp.Value.InjestRaceId)
-				{
-					<h2>Next Race</h2>
-					if (currentEvent.NextRaceSheduledStartTime != null)
-					{
-						<p>Sheduled Start Time: 
-							@currentEvent.NextRaceSheduledStartTime?.ToLocalTime()
-							@if (currentEvent.NextRaceSheduledStartTime > DateTime.UtcNow)
-							{
-							In : @TimeSpan.FromSeconds(Convert.ToUInt64(currentEvent.NextRaceSheduledStartSeconds)).ToString();
-							}
-						</p>
-					}
-				}
+			}
 
-				<InjestRaceView @key="kvp.Key" Race="kvp.Value" Results="flatList"/>
-			</div>
-			<hr />
+			<InjestRaceView @key="kvp.Key" Race="kvp.Value" Results="flatList"/>
 		}
 	}
 }

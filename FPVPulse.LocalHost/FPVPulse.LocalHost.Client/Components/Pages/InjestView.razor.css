@@ -1,0 +1,110 @@
+/* Main container styling */
+h3 {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1rem;
+    margin-bottom: 0.5rem;
+    padding-bottom: 0.25rem;
+    border-bottom: 2px solid #3498db;
+}
+
+/* Event selection button list */
+.event-button-list {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.5rem;
+    margin-bottom: 0.5rem;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-radius: 4px;
+}
+
+.event-btn {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    padding: 0.4rem 0.8rem;
+    background: white;
+    border: 1px solid #dee2e6;
+    border-radius: 3px;
+    font-weight: 500;
+    font-size: 0.8125rem;
+    color: #495057;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.event-btn:hover {
+    background: #e9ecef;
+    border-color: #3498db;
+}
+
+.event-btn.selected {
+    background: #3498db;
+    border-color: #2980b9;
+    color: white;
+}
+
+/* Loading and empty states */
+p {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    font-size: 0.8125rem;
+    color: #6c757d;
+    padding: 0.5rem;
+    background: #f8f9fa;
+    border-left: 3px solid #3498db;
+    border-radius: 2px;
+    margin: 0.5rem 0;
+}
+
+/* Scheduled time styling */
+.race-schedule-info {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    background: #fff3cd;
+    border-left: 3px solid #d68910;
+    color: #856404;
+    font-weight: 400;
+    font-size: 0.8125rem;
+    display: inline-block;
+    margin-left: 0.5rem;
+    padding: 0.5rem;
+    border-radius: 2px;
+}
+
+/* Current/Next race badges */
+h2 {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+    display: inline-block;
+    padding: 0.25rem 0.5rem;
+    border-radius: 3px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    margin-bottom: 0.25rem;
+    margin-right: 0.5rem;
+}
+
+h2:first-of-type {
+    background: #27ae60;
+    color: white;
+}
+
+h2:nth-of-type(2) {
+    background: #d68910;
+    color: white;
+}
+
+/* Responsive design */
+@media (max-width: 768px) {
+    .event-button-list {
+        flex-direction: column;
+    }
+
+    .event-btn {
+        width: 100%;
+        text-align: center;
+    }
+
+    .race-container {
+        padding: 0.5rem;
+    }
+}

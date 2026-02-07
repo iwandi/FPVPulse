@@ -1,4 +1,4 @@
-﻿# =========================
+# =========================
 # Build outputs
 # =========================
 **/[Bb]in/
@@ -19,6 +19,13 @@
 appsettings.Development.json
 appsettings.*.json   # (if you use environment-specific secrets)
 Properties/launchSettings.json
+
+# =========================
+# Database files
+# =========================
+*.db
+*.db-shm
+*.db-wal
 
 # =========================
 # NuGet
