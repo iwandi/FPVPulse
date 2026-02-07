@@ -1,5 +1,6 @@
 /* Race display container */
 .race-display {
+    font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
     background: #ffffff;
     border-radius: 4px;
     padding: 0.75rem;

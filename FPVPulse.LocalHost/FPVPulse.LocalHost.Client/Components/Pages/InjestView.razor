@@ -84,7 +84,7 @@ else
 						<p>Start: @currentEvent.NextRaceSheduledStartTime?.ToLocalTime()
 							@if (currentEvent.NextRaceSheduledStartTime > DateTime.UtcNow)
 							{
-							 | In: @TimeSpan.FromSeconds(Convert.ToUInt64(currentEvent.NextRaceSheduledStartSeconds)).ToString()
+							<text> | In: @TimeSpan.FromSeconds(Convert.ToUInt64(currentEvent.NextRaceSheduledStartSeconds)).ToString()</text>
 							}
 						</p>
 					}
