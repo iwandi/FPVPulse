@@ -186,9 +186,20 @@ namespace FPVPulse.LocalHost.Injest
         async Task ProcessLeaderabord(InjestDbContext? db, string injestId, InjestLeaderboard leaderboard)
         {
 			bool hasChange = false;
-			var existing = await db.Leaderboard.FirstOrDefaultAsync(e => e.InjestId == injestId &&
-				e.InjestEventId == leaderboard.InjestEventId &&
-				e.InjestLeaderboardId == leaderboard.InjestLeaderboardId);
+            bool hasLeaderboardId = leaderboard.InjestLeaderboardId != null && !string.IsNullOrWhiteSpace(leaderboard.InjestLeaderboardId);
+            DbInjestLeaderboard? existing = null;
+			if (hasLeaderboardId)
+            {
+				existing = await db.Leaderboard.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+					e.InjestEventId == leaderboard.InjestEventId &&
+					e.InjestLeaderboardId == leaderboard.InjestLeaderboardId);
+			}
+            else
+            {
+				existing = await db.Leaderboard.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+					e.InjestEventId == leaderboard.InjestEventId &&
+					e.RaceType == leaderboard.RaceType);
+			}
 
 			var @event = await db.Events.FirstOrDefaultAsync(e => e.InjestId == injestId &&
 				e.InjestEventId == leaderboard.InjestEventId);
@@ -217,9 +228,25 @@ namespace FPVPulse.LocalHost.Injest
 				foreach (var pilot in leaderboard.Results)
 				{
 					bool pilotHasChanges = false;
-					var existingPilot = await db.LeaderboardPilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
-						e.InjestPilotEntryId == pilot.InjestPilotEntryId &&
-						e.InjestLeaderboardId == existing.InjestLeaderboardId);
+
+					bool hasPilotId = pilot.InjestPilotId != null && !string.IsNullOrWhiteSpace(pilot.InjestPilotId);
+					bool hasPilotEntryId = pilot.InjestPilotEntryId != null && !string.IsNullOrWhiteSpace(pilot.InjestPilotEntryId);
+
+					DbInjestLeaderboardPilot? existingPilot = null;
+					if (hasPilotId)
+					{
+						existingPilot = await db.LeaderboardPilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+							e.LeaderboardId == existing.LeaderboardId &&
+							e.InjestPilotId == pilot.InjestPilotId);
+					}
+					else if (hasPilotEntryId)
+					{
+						existingPilot = await db.LeaderboardPilots.FirstOrDefaultAsync(e => e.InjestId == injestId &&
+							e.LeaderboardId == existing.LeaderboardId &&
+							e.InjestPilotEntryId == pilot.InjestPilotEntryId);
+					}
+					else
+						throw new Exception("PilotResult must have either InjestPilotId or InjestPilotEntryId");
 
 					if (existingPilot == null)
 					{

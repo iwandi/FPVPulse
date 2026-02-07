@@ -20,7 +20,8 @@ namespace FPVPulse.LocalHost.Injest
 
         public bool HasAnyItem => !eventQueue.IsEmpty ||
             !raceQueue.IsEmpty ||
-            !pilotResultQueue.IsEmpty;
+            !pilotResultQueue.IsEmpty ||
+            !leaderabordQueue.IsEmpty;
 
         //readonly ILogger<InjestQueue> logger;
 

@@ -15,6 +15,7 @@ namespace FPVPulse.Ingest.RaceVision
         readonly object eventLock = new();
         string currentEventId = String.Empty;
         string currentEventName = String.Empty;
+        RaceType currentRaceType = RaceType.Unknown;
 		bool isValidEvent = false;
 
         readonly object raceLock = new();
@@ -73,6 +74,7 @@ namespace FPVPulse.Ingest.RaceVision
                     isValidEvent = false;
                     currentEventId = String.Empty;
 					currentEventName = String.Empty;
+                    currentRaceType = RaceType.Unknown;
 					autoScan.Reset();
 				}
                 return;
@@ -188,7 +190,10 @@ namespace FPVPulse.Ingest.RaceVision
             var raceClassInformation = GetString(jObject["RaceClassInformation"]);
             //var roundLetterTypeOrderNumberDisplay = GetString(jObject["RoundLetterTypeOrderNumberDisplay"]);
 
-            if (!raceLID.HasValue && raceLID <= 0)
+            var raceType = RoundTypeToRaceType(roundType);
+			currentRaceType = raceType;
+
+			if (!raceLID.HasValue && raceLID <= 0)
             {
                 lock (raceLock)
                 {
@@ -212,7 +217,7 @@ namespace FPVPulse.Ingest.RaceVision
                         InjestRaceId = raceLID.ToString(),
                         InjestName = raceClassInformation,
 
-                        RaceType = RoundTypeToRaceType(roundType),
+                        RaceType = raceType,
                         FirstOrderPoistion = raceOrderNumber,
                     });
 
@@ -397,14 +402,17 @@ namespace FPVPulse.Ingest.RaceVision
 
         void HandleLiveEstimatedPosition(string json)
         {
-            // TODO : add option in injest this
-
             if (!IsValidEvent)
-                return;
+                return; 
+            
+            var eventId = currentEventId;
+            var raceType = currentRaceType;
 
-            var jObject = JObject.Parse(json);
+			var jObject = JObject.Parse(json);
 
-            var liveEstimatedPositions = jObject["LiveEstimatedPositions"] as JArray;
+			var pilots = new List<InjestLeaderboardPilot>();
+
+			var liveEstimatedPositions = jObject["LiveEstimatedPositions"] as JArray;
             if (liveEstimatedPositions != null)
             {
                 foreach (var estimatedPosition in liveEstimatedPositions)
@@ -413,11 +421,43 @@ namespace FPVPulse.Ingest.RaceVision
                     var driverName = GetString(estimatedPosition["DriverName"]);
                     var position = GetInt(estimatedPosition["Position"]);
                     var positionChange = GetInt(estimatedPosition["PositionChange"]);
-                    var bestSeedingResult = GetInt(estimatedPosition["BestSeedingResult"]);
+                    var bestSeedingResult = GetString(estimatedPosition["BestSeedingResult"]);
                     var tieBreaker = GetFloat(estimatedPosition["TieBreaker"]);
-                }
+
+                    if (driverLID == null)
+                        continue;
+
+					pilots.Add(new InjestLeaderboardPilot
+					{
+						InjestPilotId = driverLID.ToString(),
+
+						InjestName = driverName,
+
+						Position = position,
+                        PositionDelta = positionChange,
+
+                        PositionReason = bestSeedingResult,
+					});
+				}
             }
-        }
+
+			_ = Task.Run(async () => {
+				try
+				{
+					_ = await ingestClient.PutLeaderboard(new InjestLeaderboard
+					{
+						InjestEventId = eventId,
+						RaceType = raceType,
+
+                        Results = pilots.ToArray(),
+					});
+				}
+				catch (Exception ex)
+				{
+					Console.WriteLine($"Exception while trying to ingest HandleLiveEstimatedPosition: {ex.Message}{Environment.NewLine}{ex.StackTrace}");
+				}
+			});
+		}
 
         void HandleRaceEntryByRace(string json)
         {

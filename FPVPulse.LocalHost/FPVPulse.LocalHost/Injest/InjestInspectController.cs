@@ -144,8 +144,9 @@ namespace FPVPulse.LocalHost.Injest
 			return db.Leaderboard.Where(r => r.EventId == eventId).Select(r => r.LeaderboardId).ToArray();
 		}
 
-		[HttpGet("event/{eventId}/leaderboard/{raceType}")]
-		public ActionResult<InjestLeaderboard> GetLeaderboardByRaceType(int eventId, RaceType raceType)
+		[HttpGet("event/{eventId}/leaderboard/{raceType:int}")]
+		[HttpGet("event/{eventId}/leaderboard/{raceType:alpha}")]
+		public ActionResult<InjestLeaderboard> GetLeaderboardByRaceType(int eventId, [FromRoute] RaceType raceType)
 		{
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();

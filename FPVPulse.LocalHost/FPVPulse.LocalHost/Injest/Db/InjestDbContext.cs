@@ -46,10 +46,6 @@ namespace FPVPulse.LocalHost.Injest.Db
                  .HasKey(p => p.RacePilotId);
 
 			modelBuilder.Entity<DbInjestLeaderboardPilot>()
-				.HasIndex(e => new { e.InjestId, e.InjestLeaderboardId, e.InjestPilotEntryId })
-				.IsUnique();
-
-			modelBuilder.Entity<DbInjestLeaderboardPilot>()
 				 .HasKey(p => p.LeaderboardPilotId);
 		}
     }

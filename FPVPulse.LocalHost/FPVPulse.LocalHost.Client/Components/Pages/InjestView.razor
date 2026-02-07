@@ -46,9 +46,9 @@ else
 	else
 	{
 		@foreach (var kvp in races
-									.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
-									.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
-									.ThenBy(kvp => kvp.Value.SecondOrderPosition))
+																							.OrderBy(kvp => InjestRace.GetRaceTypeOrder(kvp.Value.RaceType))
+																							.ThenBy(kvp => kvp.Value.FirstOrderPoistion)
+																							.ThenBy(kvp => kvp.Value.SecondOrderPosition))
 		{
 			InjestPilotResult[] flatList = null;
 			if (pilotResults.TryGetValue(kvp.Key, out var pilotResult) && pilotResult != null)
@@ -97,6 +97,7 @@ else
 	private string? scollTo;
 	private Dictionary<int, InjestRace> races = new();
 	private Dictionary<int, List<(int id, InjestPilotResult result)>> pilotResults = new();
+	private Dictionary<RaceType, InjestLeaderboard> leaderboards = new();
 
 	private object racesLock = new();
 	private object pilotResultsLock = new();
@@ -222,9 +223,29 @@ else
 			}//);
 			//loadTasks.Add(loadTask);
 		}
+		await LoadLeaderboardsByRaceType(RaceType.Practice);
+		await LoadLeaderboardsByRaceType(RaceType.Qualifying);
+		await LoadLeaderboardsByRaceType(RaceType.Mains);
 		await Task.WhenAll(loadTasks);
 
 		StateHasChanged();
+	}
+
+	async Task LoadLeaderboardsByRaceType(RaceType raceType)
+	{
+		if (currentEventId != null)
+		{
+			try
+			{
+				var leaderboard = await Http.GetFromJsonAsync<InjestLeaderboard>($"api/injest/inspect/event/{currentEventId}/leaderboard/{raceType}");
+				StoreInjestLeaderabord(raceType, leaderboard);
+			}
+			catch(System.Net.Http.HttpRequestException ex)
+			{
+				if (ex.StatusCode != System.Net.HttpStatusCode.NotFound)
+					throw ex;
+			}
+		}
 	}
 
 	private void OnSignalChangeEventData(int id, int parentId, InjestEvent @event)
@@ -279,12 +300,17 @@ else
 		}
 	}
 
-	void OnSignalChangeLeaderboardData(int id, int parentId, InjestLeaderboard data)
+	void OnSignalChangeLeaderboardData(int id, int parentId, InjestLeaderboard leaderboard)
 	{
-		// TODO
+		if(currentEventId == parentId)
+		{
+			var raceType = leaderboard.RaceType;
+			if (raceType.HasValue)
+				StoreInjestLeaderabord(raceType.Value, leaderboard);
+		}
 	}
 
-	void StoreInjestRace(int raceId, InjestRace race)
+	void StoreInjestRace(int raceId, InjestRace? race)
 	{
 		lock (racesLock)
 		{
@@ -313,6 +339,22 @@ else
 				else
 					resultsList.Add((resultId, pilotResult));
 			}
+		}
+	}
+
+	void StoreInjestLeaderabord(RaceType raceType, InjestLeaderboard? leaderboard)
+	{
+		lock (leaderboardLock)
+		{
+			if (leaderboard != null)
+			{
+				JS.InvokeVoidAsync("Console.log", "StoreInjestLeaderabord", raceType, leaderboard);
+			}
+
+			if (leaderboard != null)
+				leaderboards[raceType] = leaderboard;
+			else if (leaderboards.ContainsKey(raceType))
+				leaderboards.Remove(raceType);
 		}
 	}
 
