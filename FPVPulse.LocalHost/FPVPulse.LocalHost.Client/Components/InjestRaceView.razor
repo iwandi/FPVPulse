@@ -4,12 +4,15 @@
 <div class="race-display">
     @if (Race != null)
     {
-        <strong>@Race.RaceType @Race.InjestName</strong>
-        <span> - InjestRaceId: @Race.InjestRaceId</span>
-        <span> - InjestEventId: @Race.InjestEventId</span>
-        <span> - Layout: @Race.RaceLayout</span>
-        <span> - FirstOrderPoistion: @Race.FirstOrderPoistion</span>
-        <span> - SecondOrderPosition: @Race.SecondOrderPosition</span>
+        <h3>📊 Race Details</h3>
+        <div class="race-info">
+            <strong>@Race.RaceType @Race.InjestName</strong>
+            <span>InjestRaceId: @Race.InjestRaceId</span>
+            <span>InjestEventId: @Race.InjestEventId</span>
+            <span>Layout: @Race.RaceLayout</span>
+            <span>FirstOrderPosition: @Race.FirstOrderPoistion</span>
+            <span>SecondOrderPosition: @Race.SecondOrderPosition</span>
+        </div>
 
         @if(Race.Pilots != null && Race.Pilots.Length > 0)
         {
@@ -22,20 +25,20 @@
                     <th>StartPosition</th>
                     <th>Position</th>
                     <th>Channel</th>
-                    <td>CurrentSector</td>
-                    <td>CurrentSplit</td>
-                    <td>Position</td>
-                    <td>StartTime</td>
-                    <td>FinishTime</td>
-                    <td>LapCount</td>
-                    <td>TotalTime</td>
-                    <td>TopLapTime</td>
-                    <td>Top2ConsecutiveLapTime</td>
-                    <td>Top3ConsecutiveLapTime</td>
-                    <td>AverageLapTime</td>
-                    <td>IsComplited</td>
-                    <td>Flags</td>
-                    <td>Laps</td>
+                    <th>CurrentSector</th>
+                    <th>CurrentSplit</th>
+                    <th>Result Position</th>
+                    <th>StartTime</th>
+                    <th>FinishTime</th>
+                    <th>LapCount</th>
+                    <th>TotalTime</th>
+                    <th>TopLapTime</th>
+                    <th>Top2ConsecutiveLapTime</th>
+                    <th>Top3ConsecutiveLapTime</th>
+                    <th>AverageLapTime</th>
+                    <th>IsCompleted</th>
+                    <th>Flags</th>
+                    <th>Laps</th>
                 </tr>
             @foreach(var pilot in Race.Pilots)
             {

@@ -1,98 +1,113 @@
-/* Leaderboard heading */
-h3 {
-    color: #2c3e50;
-    font-weight: 700;
-    margin: 2rem 0 1rem;
-    padding: 0.75rem 1rem;
-    background: linear-gradient(135deg, #9b59b6, #8e44ad);
-    color: white;
+/* Leaderboard display container */
+.leaderboard-display {
+    background: #ffffff;
     border-radius: 8px;
-    display: inline-block;
-    box-shadow: 0 4px 12px rgba(155, 89, 182, 0.3);
+    padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Leaderboard heading */
+.leaderboard-display h3 {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #3498db;
 }
 
 /* Leaderboard table */
-table {
+.leaderboard-display table {
     width: 100%;
     border-collapse: collapse;
-    margin-bottom: 2rem;
+    margin-top: 1rem;
     background: white;
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     border-radius: 8px;
     overflow: hidden;
 }
 
-table th {
-    background: linear-gradient(135deg, #9b59b6, #8e44ad);
+.leaderboard-display table th {
+    background: linear-gradient(135deg, #3498db, #2980b9);
     color: white;
-    padding: 0.875rem;
+    padding: 0.75rem;
     text-align: left;
     font-weight: 600;
     font-size: 0.875rem;
-    border-bottom: 3px solid #8e44ad;
+    border-bottom: 2px solid #2980b9;
 }
 
-table td {
-    padding: 0.875rem;
+.leaderboard-display table td {
+    padding: 0.75rem;
     border-bottom: 1px solid #e9ecef;
     color: #495057;
     font-size: 0.875rem;
 }
 
-table tr:last-child td {
+.leaderboard-display table tr:last-child td {
     border-bottom: none;
 }
 
 /* Highlight position column */
-table td:nth-child(4) {
+.leaderboard-display table td:nth-child(4) {
     font-weight: 600;
     color: #2c3e50;
     font-size: 1rem;
 }
 
-/* Position badge styling */
-table tr:first-child td:nth-child(4) {
+/* Position badge styling - Gold, Silver, Bronze */
+.leaderboard-display table tbody tr:nth-child(1) td:nth-child(4) {
     color: #f39c12;
     font-size: 1.125rem;
 }
 
-table tr:nth-child(2) td:nth-child(4) {
+.leaderboard-display table tbody tr:nth-child(2) td:nth-child(4) {
     color: #95a5a6;
     font-size: 1.125rem;
 }
 
-table tr:nth-child(3) td:nth-child(4) {
+.leaderboard-display table tbody tr:nth-child(3) td:nth-child(4) {
     color: #cd7f32;
     font-size: 1.125rem;
 }
 
 /* Hover effect */
-table tr:hover {
-    background: #f4ecf7;
+.leaderboard-display table tr:hover {
+    background: #f8f9fa;
 }
 
 /* Alternating row colors */
-table tr:nth-child(even) {
-    background: #faf8fb;
+.leaderboard-display table tbody tr:nth-child(even) {
+    background: #f8f9fa;
 }
 
-table tr:nth-child(even):hover {
-    background: #f4ecf7;
+.leaderboard-display table tbody tr:nth-child(even):hover {
+    background: #e9ecef;
 }
 
 /* Responsive design */
-@media (max-width: 768px) {
-    table {
+@media (max-width: 1200px) {
+    .leaderboard-display table {
         font-size: 0.75rem;
     }
 
-    table th,
-    table td {
+    .leaderboard-display table th,
+    .leaderboard-display table td {
         padding: 0.5rem;
     }
+}
 
-    h3 {
-        font-size: 1.25rem;
-        padding: 0.5rem 0.75rem;
+@media (max-width: 768px) {
+    .leaderboard-display {
+        padding: 1rem;
+        overflow-x: auto;
+    }
+
+    .leaderboard-display table {
+        min-width: 600px;
+    }
+
+    .leaderboard-display h3 {
+        font-size: 1.125rem;
     }
 }

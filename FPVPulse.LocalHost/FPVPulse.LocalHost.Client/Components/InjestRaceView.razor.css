@@ -3,17 +3,33 @@
     background: #ffffff;
     border-radius: 8px;
     padding: 1.5rem;
+    margin-bottom: 1rem;
+}
+
+/* Race section heading */
+.race-display h3 {
+    color: #2c3e50;
+    font-weight: 600;
+    font-size: 1.25rem;
+    margin: 0 0 1rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 2px solid #3498db;
+}
+
+/* Race info container */
+.race-display .race-info {
+    margin-bottom: 1rem;
 }
 
 /* Race header information */
-.race-display strong {
-    font-size: 1.25rem;
+.race-display .race-info strong {
+    font-size: 1.125rem;
     color: #2c3e50;
     display: block;
     margin-bottom: 0.75rem;
 }
 
-.race-display span {
+.race-display .race-info span {
     display: inline-block;
     margin-right: 1rem;
     padding: 0.25rem 0.75rem;
@@ -28,7 +44,7 @@
 .race-display table {
     width: 100%;
     border-collapse: collapse;
-    margin-top: 1.5rem;
+    margin-top: 1rem;
     background: white;
     box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
     border-radius: 8px;
@@ -61,11 +77,11 @@
 }
 
 /* Alternating row colors for better readability */
-.race-display table tr:nth-child(even) {
+.race-display table tbody tr:nth-child(even) {
     background: #f8f9fa;
 }
 
-.race-display table tr:nth-child(even):hover {
+.race-display table tbody tr:nth-child(even):hover {
     background: #e9ecef;
 }
 
@@ -103,9 +119,13 @@
         min-width: 800px;
     }
 
-    .race-display span {
+    .race-display .race-info span {
         display: block;
         margin-right: 0;
         margin-bottom: 0.5rem;
+    }
+
+    .race-display h3 {
+        font-size: 1.125rem;
     }
 }
