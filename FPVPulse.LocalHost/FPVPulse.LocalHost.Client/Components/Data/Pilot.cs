@@ -7,7 +7,7 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 		[Key]
 		public int PilotId;
 
-		public int InjestPilotId;
+		public string? InjestPilotId;
 
 		[MaxLength(30)]
 		public string DisplayName = string.Empty;

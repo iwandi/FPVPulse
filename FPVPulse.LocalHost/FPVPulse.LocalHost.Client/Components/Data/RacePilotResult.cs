@@ -8,42 +8,42 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class RacePilotResult
 	{
 		[Key]
-		public int RacePilotResultId { get; set; }
+		public int RacePilotResultId;
 
-		public int InjestPilotResultId { get; set; }
+		public int InjestPilotResultId;
 
 		[ForeignKey(nameof(RacePilot))]
-		public int RacePilotId { get; set; }
+		public int RacePilotId;
 
-		public int? Position { get; set; }
+		public int? Position;
 
-		public int? CurrentSector { get; set; }
-		public int? CurrentSplit { get; set; }
+		public int? CurrentSector;
+		public int? CurrentSplit;
 
-		public DateTime? StartTime { get; set; }
-		public DateTime? FinishTime { get; set; }
+		public DateTime? StartTime;
+		public DateTime? FinishTime;
 
-		public int? LapCount { get; set; }
-		public float? TotalTime { get; set; }
+		public int? LapCount;
+		public float? TotalTime;
 
-		public float? TopLapTime { get; set; }
-		public float? Top2ConsecutiveLapTime { get; set; }
-		public float? Top3ConsecutiveLapTime { get; set; }
+		public float? TopLapTime;
+		public float? Top2ConsecutiveLapTime;
+		public float? Top3ConsecutiveLapTime;
 
-		public float? AverageLapTime { get; set; }
+		public float? AverageLapTime;
 
-		public bool? IsComplited { get; set; }
+		public bool? IsComplited;
 
-		public ResultFlag? Flags { get; set; }
+		public ResultFlag? Flags;
 
-		public Lap[]? Laps { get; set; }
+		public Lap[]? Laps;
 	}
 
 	public class Lap
 	{
-		public int LapNumber { get; set; }
-		public float? LapTime { get; set; }
+		public int LapNumber;
+		public float? LapTime;
 
-		public bool? IsInvalid { get; set; }
+		public bool? IsInvalid;
 	}
 }

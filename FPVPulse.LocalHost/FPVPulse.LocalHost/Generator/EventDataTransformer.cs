@@ -9,7 +9,7 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace FPVPulse.LocalHost.Generator
 {
-	public class EventDataTransformer : BaseTransformer<InjestEvent>
+	public class EventDataTransformer : BaseTransformer<DbInjestEvent>
 	{
 		public EventDataTransformer(ChangeSignaler changeSignaler, IServiceProvider serviceProvider)
 			: base(changeSignaler, serviceProvider)
@@ -22,12 +22,12 @@ namespace FPVPulse.LocalHost.Generator
 			changeSignaler.OnInjestEventChanged += OnChanged;
 		}
 
-		protected override async Task Process(EventDbContext db, InjestDbContext injestDb, InjestEvent @event, int id, int parentId)
+		protected override async Task Process(EventDbContext db, DbInjestEvent @event, int id, int parentId)
 		{
 			// TODO : Allow for override of existingEvent.Name
 
 			var existingEvent = await db.Events.Where(e => e.InjestEventId == id).FirstOrDefaultAsync();
-			if (existingEvent != null)
+			if (existingEvent == null)
 			{
 				existingEvent = new Event { InjestEventId = id };
 				Merge(existingEvent, @event);
@@ -37,14 +37,17 @@ namespace FPVPulse.LocalHost.Generator
 			else if (Merge(existingEvent, @event))
 				await db.SaveChangesAsync();
 
-			var nextInjeastRaceId = await injestDb.Races.Where( r => r.InjestEventId == @event.NextInjestRaceId).Select( r => r.RaceId).FirstOrDefaultAsync();
-			var currentInjeastRaceId = await injestDb.Races.Where(r => r.InjestEventId == @event.CurrentInjestRaceId).Select(r => r.RaceId).FirstOrDefaultAsync();
-			var nextRaceId = await db.Races.Where(r => r.InjestRaceId == nextInjeastRaceId).Select(r => r.RaceId).FirstOrDefaultAsync();
-			var currentRaceId = await db.Races.Where( r => r.InjestRaceId == currentInjeastRaceId).Select(r => r.RaceId).FirstOrDefaultAsync();
+			var getCurrentRaceInjestRaceId = db.Races.Where(e => e.InjestRaceId == @event.CurrentRaceId).Select(e => e.RaceId).ExecuteDeleteAsync();
+			var getNextRaceInjestRaceId = db.Races.Where( e => e.InjestRaceId == @event.NextRaceId).Select(e => e.RaceId).ExecuteDeleteAsync();
+			var getEventShedule = db.EventShedules.Where(e => e.InjestEventId == id).FirstOrDefaultAsync();
 
-			var eventShedule = await db.EventShedules.Where(e => e.InjestEventId == id).FirstOrDefaultAsync();
+			await Task.WhenAll(getCurrentRaceInjestRaceId, getNextRaceInjestRaceId, getEventShedule);
 
-			if (eventShedule != null)
+			var currentRaceId = getCurrentRaceInjestRaceId.Result;
+			var nextRaceId = getNextRaceInjestRaceId.Result;
+			var eventShedule = getEventShedule.Result;	
+
+			if (eventShedule == null)
 			{
 				eventShedule = new EventShedule { InjestEventId = id };
 				Merge(eventShedule, @event, currentRaceId, nextRaceId);
@@ -58,21 +61,10 @@ namespace FPVPulse.LocalHost.Generator
 		bool Merge(Event @event, InjestEvent injestEvent)
 		{
 			bool hasChange = false;
-			if (@event.Name == null || !string.IsNullOrWhiteSpace(injestEvent.InjestName) || @event.Name != injestEvent.InjestName)
-			{
-				@event.Name = injestEvent.InjestName;
-				hasChange = true;
-			}
-			if(@event.StartDate == null || @event.StartDate != injestEvent.StartDate)
-			{
-				@event.StartDate = injestEvent.StartDate;
-				hasChange = true;
-			}
-			if (@event.EndDate == null || @event.EndDate != injestEvent.EndDate)
-			{
-				@event.EndDate = injestEvent.EndDate;
-				hasChange = true;
-			}
+
+			hasChange |= MergeUtil.MergeMemberString(ref @event.Name, injestEvent.InjestName);
+			hasChange |= MergeUtil.MergeMember(ref @event.StartDate, injestEvent.StartDate);
+			hasChange |= MergeUtil.MergeMember(ref @event.EndDate, injestEvent.EndDate);
 
 			return hasChange;
 		}
@@ -83,16 +75,8 @@ namespace FPVPulse.LocalHost.Generator
 
 			// TODO Copy Shedule
 
-			if (shedule.CurrentRaceId != currentRaceId)
-			{
-				shedule.CurrentRaceId = currentRaceId;
-				hasChange = true;
-			}
-			if(shedule.NextRaceId != nextRaceId)
-			{
-				shedule.NextRaceId = nextRaceId;
-				hasChange = true;
-			}
+			hasChange |= MergeUtil.SetMember(ref shedule.CurrentRaceId, currentRaceId);
+			hasChange |= MergeUtil.SetMember(ref shedule.CurrentRaceId, nextRaceId);
 
 			return hasChange;
 		}

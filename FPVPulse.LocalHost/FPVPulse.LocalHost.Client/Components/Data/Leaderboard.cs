@@ -1,4 +1,5 @@
-﻿using System.ComponentModel.DataAnnotations;
+﻿using FPVPulse.Ingest;
+using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 
 namespace FPVPulse.LocalHost.Client.Components.Data
@@ -6,13 +7,13 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class Leaderboard
 	{
 		[Key]
-		public int LeaderboardId { get; set; }
+		public int LeaderboardId;
 
-		public int InjestLeaderboardId { get; set; }
+		public int InjestLeaderboardId;
 
 		[ForeignKey(nameof(Event))]
-		public int EventId { get; set; }
-		public int RaceType { get; set; }
+		public int EventId;
+		public RaceType RaceType;
 
 		[ForeignKey("LeaderboardId")]
 		public LeaderboardPilot[]? Pilots { get; set; }

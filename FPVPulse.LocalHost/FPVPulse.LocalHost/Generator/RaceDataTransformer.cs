@@ -23,10 +23,14 @@ namespace FPVPulse.LocalHost.Generator
 
 		protected override async Task Process(EventDbContext db, DbInjestRace data, int id, int parentId)
 		{
-			var eventId = await db.Events.Where( e => e.InjestEventId == parentId).Select(e => e.EventId).FirstOrDefaultAsync();
-			var existingRace = db.Races.Where(r => r.InjestRaceId == id).FirstOrDefault();
+			var getEventId = db.Events.Where( e => e.InjestEventId == parentId).Select(e => e.EventId).FirstOrDefaultAsync();
+			var getExistingRace = db.Races.Where(r => r.InjestRaceId == id).FirstOrDefaultAsync();
 
-			if (existingRace != null)
+			await Task.WhenAll(getEventId, getExistingRace);
+
+			var eventId = getEventId.Result;
+			var existingRace = getExistingRace.Result;
+			if (existingRace == null)
 			{
 				existingRace = new Race { InjestRaceId = id, EventId = eventId };
 				Merge(existingRace, data);
@@ -40,23 +44,24 @@ namespace FPVPulse.LocalHost.Generator
 			{
 				foreach (var injestPilot in data.Pilots)
 				{
-					DbInjestRacePilot dataPilot = injestPilot as DbInjestRacePilot;
+					var dataPilot = injestPilot as DbInjestRacePilot;
 					if (dataPilot == null)
 						throw new Exception("Unexpected type DbInjestRace contains non DbInjestRacePilot in Pilots");
 
-					int pilotInjestId = dataPilot.RacePilotId;
-					//todo : this is more complicated as we want to find cross event pilots !!!
-					var existingPilot = await db.Pilots.Where(p => p.InjestPilotId == pilotInjestId).FirstOrDefaultAsync();
-					if (existingPilot != null)
+					var pilotInjestId = dataPilot.InjestPilotId;
+					var existingPilot = await db.MatchPilot(pilotInjestId, dataPilot.InjestName);
+
+					var racePilotInjestId = dataPilot.RacePilotId;
+					var existingRacePilot = await db.RacePilots.Where(rp => rp.InjestRacePilotId == racePilotInjestId).FirstOrDefaultAsync();
+					if(existingRacePilot == null)
 					{
-						existingPilot = new Pilot { InjestPilotId = pilotInjestId };
-						Merge(existingPilot, dataPilot);
-						db.Pilots.Add(existingPilot);
+						existingRacePilot = new RacePilot { InjestRacePilotId = racePilotInjestId, PilotId = existingPilot.PilotId };
+						Merge(existingRacePilot, dataPilot);
+						db.RacePilots.Add(existingRacePilot);
 						await db.SaveChangesAsync();
 					}
-					else if (Merge(existingPilot, dataPilot))
+					else if(Merge(existingRacePilot, dataPilot))
 						await db.SaveChangesAsync();
-
 				}
 			}
 		}
@@ -66,19 +71,10 @@ namespace FPVPulse.LocalHost.Generator
 			bool hasChange = false;
 
 			hasChange |= MergeUtil.MergeMemberString(ref race.Name, injestRace.InjestRaceId);
-			hasChange |= MergeUtil.MergeMember(ref race.RaceType, injestRace.RaceType);
-			hasChange |= MergeUtil.MergeMember(ref race.RaceLayout, injestRace.RaceLayout);
+			hasChange |= MergeUtil.MergeEnumMember(ref race.RaceType, injestRace.RaceType);
+			hasChange |= MergeUtil.MergeEnumMember(ref race.RaceLayout, injestRace.RaceLayout);
 			hasChange |= MergeUtil.MergeMember(ref race.FirstOrderPoistion, injestRace.FirstOrderPoistion);
 			hasChange |= MergeUtil.MergeMember(ref race.SecondOrderPosition, injestRace.SecondOrderPosition);
-
-			return hasChange;
-		}
-
-		bool Merge(Pilot pilot, DbInjestRacePilot injestRacePilot)
-		{
-			bool hasChange = false;
-
-			hasChange |= MergeUtil.MergeMemberString(ref pilot.DisplayName, injestRacePilot.InjestName);
 
 			return hasChange;
 		}

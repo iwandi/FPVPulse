@@ -15,6 +15,8 @@ namespace FPVPulse.LocalHost.Injest.Db
 		[Required]
 		public string InjestLeaderboardId { get; set; } = string.Empty;
 
+		public int? PositionReasonRaceId;
+
 		public DbInjestLeaderboardPilot()
 		{
 

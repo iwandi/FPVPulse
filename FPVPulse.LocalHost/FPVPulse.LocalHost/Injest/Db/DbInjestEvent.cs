@@ -11,7 +11,10 @@ namespace FPVPulse.LocalHost.Injest.Db
         [Required]
         public string InjestId { get; set; } = string.Empty;
 
-        public DbInjestEvent()
+		public int? CurrentRaceId { get; set; }
+		public int? NextRaceId { get; set; }
+
+		public DbInjestEvent()
         {
 
         }
