@@ -18,11 +18,14 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			this.changeSignaler = changeSignaler;
 			this.serviceProvider = serviceProvider;
+
+			Bind(changeSignaler);
 		}
 
 		protected void OnChanged(object? sender, ChangeEventArgs<T> @event)
 		{
 			queue.Enqueue(@event);
+			signal.Release();
 		}
 
 		protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -37,7 +40,7 @@ namespace FPVPulse.LocalHost.Generator
 				{
 					if (queue.TryDequeue(out var @event))
 					{
-						await Process(db, injestDb, @event.Data, @event.Id, @event.ParentId);
+						await Process(db, @event.Data, @event.Id, @event.ParentId);
 					}
 
 					await signal.WaitAsync(stoppingToken);
@@ -51,6 +54,6 @@ namespace FPVPulse.LocalHost.Generator
 
 		public abstract void Bind(ChangeSignaler changeSignaler);
 
-		protected abstract Task Process(EventDbContext db, InjestDbContext injestDb, T data, int id, int parentId);
+		protected abstract Task Process(EventDbContext db, T data, int id, int parentId);
 	}
 }

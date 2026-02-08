@@ -6,21 +6,21 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class RacePilot
 	{
 		[Key]
-		public int RacePilotId { get; set; }
+		public int RacePilotId;
 
-		public int InjestRacePilotId { get; set; }
+		public int InjestRacePilotId;
 
 		[ForeignKey(nameof(RacePilot))]
-		public int PilotId { get; set; }
+		public int PilotId;
 
-		public int? SeedPosition { get; set; }
-		public int? SeedRaceId { get; set; }
+		public int? SeedPosition;
+		public int? SeedRaceId;
 
-		public int StartPosition { get; set; }
-		public int Position { get; set; }
+		public int StartPosition;
+		public int Position;
 
 		[MaxLength(10)]
-		public string Channel { get; set; } = string.Empty;
+		public string Channel = string.Empty;
 
 		[ForeignKey("RacePilotId")]
 		public RacePilotResult? Result { get; set; }

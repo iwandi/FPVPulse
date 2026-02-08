@@ -2,18 +2,19 @@
 using FPVPulse.LocalHost.Client;
 using Microsoft.AspNetCore.Components;
 using FPVPulse.Ingest;
+using FPVPulse.LocalHost.Injest.Db;
 
 namespace FPVPulse.LocalHost.Signal
 {
     public class ChangeSignaler
     {
         public event EventHandler<ChangeEventArgs<object>>? OnChange;
-        public event EventHandler<ChangeEventArgs<InjestEvent>>? OnInjestEventChanged;
-        public event EventHandler<ChangeEventArgs<InjestRace>>? OnInjestRaceChanged;
-		public event EventHandler<ChangeEventArgs<InjestRacePilot>>? OnInjestRaceDataChanged;
-		public event EventHandler<ChangeEventArgs<InjestPilotResult>>? OnInjestPilotResultChanged;
-		public event EventHandler<ChangeEventArgs<InjestLeaderboard>>? OnInjestLeaderabordChanged;
-		public event EventHandler<ChangeEventArgs<InjestLeaderboardPilot>>? OnInjestLeaderabordPilotChanged;
+        public event EventHandler<ChangeEventArgs<DbInjestEvent>>? OnInjestEventChanged;
+        public event EventHandler<ChangeEventArgs<DbInjestRace>>? OnInjestRaceChanged;
+		public event EventHandler<ChangeEventArgs<DbInjestRacePilot>>? OnInjestRaceDataChanged;
+		public event EventHandler<ChangeEventArgs<DbInjestPilotResult>>? OnInjestPilotResultChanged;
+		public event EventHandler<ChangeEventArgs<DbInjestLeaderboard>>? OnInjestLeaderabordChanged;
+		public event EventHandler<ChangeEventArgs<DbInjestLeaderboardPilot>>? OnInjestLeaderabordPilotChanged;
 
 		readonly IHubContext<ChangeHub> changeHub;
 
@@ -44,7 +45,7 @@ namespace FPVPulse.LocalHost.Signal
             {
                 case ChangeGroup.InjestEvent:
 				case ChangeGroup.InjestEventData:
-					if (change is ChangeEventArgs<InjestEvent> eventArgs)
+					if (change is ChangeEventArgs<DbInjestEvent> eventArgs)
 						OnInjestEventChanged?.Invoke(this, eventArgs);
 					group = ChangeGroup.InjestEvent.ToString();
                     groupData = ChangeGroup.InjestEventData.ToString();
@@ -52,7 +53,7 @@ namespace FPVPulse.LocalHost.Signal
 					break;
                 case ChangeGroup.InjestRace:
 				case ChangeGroup.InjestRaceData:
-					if (change is ChangeEventArgs<InjestRace> raceArgs)
+					if (change is ChangeEventArgs<DbInjestRace> raceArgs)
 						OnInjestRaceChanged?.Invoke(this, raceArgs);
 					group = ChangeGroup.InjestRace.ToString();
 					groupData = ChangeGroup.InjestRaceData.ToString();
@@ -60,7 +61,7 @@ namespace FPVPulse.LocalHost.Signal
 					break;
 				case ChangeGroup.InjestRacePilot:
 				case ChangeGroup.InjestRacePilotData:
-					if (change is ChangeEventArgs<InjestRacePilot> racePilotArgs)
+					if (change is ChangeEventArgs<DbInjestRacePilot> racePilotArgs)
 						OnInjestRaceDataChanged?.Invoke(this, racePilotArgs);
 					group = ChangeGroup.InjestRacePilot.ToString();
 					groupData = ChangeGroup.InjestRacePilotData.ToString();
@@ -68,7 +69,7 @@ namespace FPVPulse.LocalHost.Signal
 					break;
 				case ChangeGroup.InjestPilotResult:
 				case ChangeGroup.InjestPilotResultData:
-					if (change is ChangeEventArgs<InjestPilotResult> pilotResultArgs)
+					if (change is ChangeEventArgs<DbInjestPilotResult> pilotResultArgs)
 						OnInjestPilotResultChanged?.Invoke(this, pilotResultArgs);
 					group = ChangeGroup.InjestPilotResult.ToString();
 					groupData = ChangeGroup.InjestPilotResultData.ToString();
@@ -76,7 +77,7 @@ namespace FPVPulse.LocalHost.Signal
 					break;
 				case ChangeGroup.InjestLeaderboard:
 				case ChangeGroup.InjestLeaderboardData:
-					if (change is ChangeEventArgs<InjestLeaderboard> leaderabordArgs)
+					if (change is ChangeEventArgs<DbInjestLeaderboard> leaderabordArgs)
 						OnInjestLeaderabordChanged?.Invoke(this, leaderabordArgs);
 					group = ChangeGroup.InjestLeaderboard.ToString();
 					groupData = ChangeGroup.InjestLeaderboardData.ToString();
@@ -84,7 +85,7 @@ namespace FPVPulse.LocalHost.Signal
 					break;
 				case ChangeGroup.InjestLeaderboardPilot:
 				case ChangeGroup.InjestLeaderboardPilotData:
-					if (change is ChangeEventArgs<InjestLeaderboardPilot> leaderabordPilotArgs)
+					if (change is ChangeEventArgs<DbInjestLeaderboardPilot> leaderabordPilotArgs)
 						OnInjestLeaderabordPilotChanged?.Invoke(this, leaderabordPilotArgs);
 					group = ChangeGroup.InjestLeaderboardPilot.ToString();
 					groupData = ChangeGroup.InjestLeaderboardPilotData.ToString();

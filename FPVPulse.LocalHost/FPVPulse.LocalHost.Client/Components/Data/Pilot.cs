@@ -5,30 +5,30 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class Pilot
 	{
 		[Key]
-		public int PilotId { get; set; }
+		public int PilotId;
 
-		public int InjestPilotId { get; set; }
-
-		[MaxLength(30)]
-		public string DisplayName { get; set; } = string.Empty;
+		public int InjestPilotId;
 
 		[MaxLength(30)]
-		public string FirstName { get; set; } = string.Empty;
-		[MaxLength(30)]
-		public string LastName { get; set; } = string.Empty;
-		[MaxLength(30)]
-		public string NickName { get; set; } = string.Empty;
+		public string DisplayName = string.Empty;
 
 		[MaxLength(30)]
-		public string Nationality { get; set; } = string.Empty;
+		public string FirstName = string.Empty;
+		[MaxLength(30)]
+		public string LastName = string.Empty;
+		[MaxLength(30)]
+		public string NickName = string.Empty;
+
+		[MaxLength(30)]
+		public string Nationality = string.Empty;
 
 		[MaxLength(2)]
-		public string CountryAlpha2 { get; set; } = string.Empty;
+		public string CountryAlpha2 = string.Empty;
 		[MaxLength(3)]
-		public string CountryAlpha3 { get; set; } = string.Empty;
+		public string CountryAlpha3 = string.Empty;
 		[MaxLength(3)]
-		public string Language { get; set; } = string.Empty;
+		public string Language = string.Empty;
 		[MaxLength(6)]
-		public string Locale { get; set; } = string.Empty;
+		public string Locale = string.Empty;
 	}
 }

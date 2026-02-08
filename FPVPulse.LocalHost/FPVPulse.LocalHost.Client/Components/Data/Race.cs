@@ -7,21 +7,21 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class Race
 	{
 		[Key]
-		public int RaceId { get; set; }
+		public int RaceId;
 
-		public int InjestRaceId { get; set; }
+		public int InjestRaceId;
 
 		[ForeignKey(nameof(Event))]
-		public int EventId { get; set; }
+		public int EventId;
 
 		[MaxLength(30)]
-		public string Name { get; set; } = string.Empty;
-		public RaceType RaceType { get; set; }
+		public string Name = string.Empty;
+		public RaceType RaceType;
 
-		public RaceLayout RaceLayout { get; set; }
+		public RaceLayout RaceLayout;
 
-		public int FirstOrderPoistion { get; set; }
-		public int SecondOrderPosition { get; set; }
+		public int FirstOrderPoistion;
+		public int SecondOrderPosition;
 
 		[ForeignKey("RaceId")]
 		public RacePilot[]? Pilots { get; set; }

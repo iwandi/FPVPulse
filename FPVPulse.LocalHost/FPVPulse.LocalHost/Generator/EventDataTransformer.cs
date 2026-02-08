@@ -37,19 +37,21 @@ namespace FPVPulse.LocalHost.Generator
 			else if (Merge(existingEvent, @event))
 				await db.SaveChangesAsync();
 
-			// TODO : Allow for mapping of CurrentRaceId and NextRaceId
+			var nextInjeastRaceId = await injestDb.Races.Where( r => r.InjestEventId == @event.NextInjestRaceId).Select( r => r.RaceId).FirstOrDefaultAsync();
+			var currentInjeastRaceId = await injestDb.Races.Where(r => r.InjestEventId == @event.CurrentInjestRaceId).Select(r => r.RaceId).FirstOrDefaultAsync();
+			var nextRaceId = await db.Races.Where(r => r.InjestRaceId == nextInjeastRaceId).Select(r => r.RaceId).FirstOrDefaultAsync();
+			var currentRaceId = await db.Races.Where( r => r.InjestRaceId == currentInjeastRaceId).Select(r => r.RaceId).FirstOrDefaultAsync();
 
 			var eventShedule = await db.EventShedules.Where(e => e.InjestEventId == id).FirstOrDefaultAsync();
-
 
 			if (eventShedule != null)
 			{
 				eventShedule = new EventShedule { InjestEventId = id };
-				Merge(eventShedule, @event);
+				Merge(eventShedule, @event, currentRaceId, nextRaceId);
 				db.EventShedules.Add(eventShedule);
 				await db.SaveChangesAsync();
 			}
-			else if (Merge(eventShedule, @event))
+			else if (Merge(eventShedule, @event, currentRaceId, nextRaceId))
 				await db.SaveChangesAsync();
 		}
 
@@ -75,11 +77,22 @@ namespace FPVPulse.LocalHost.Generator
 			return hasChange;
 		}
 
-		bool Merge(EventShedule shedule, InjestEvent injestEvent)
+		bool Merge(EventShedule shedule, InjestEvent injestEvent, int? currentRaceId, int? nextRaceId)
 		{
 			bool hasChange = false;
 
 			// TODO Copy Shedule
+
+			if (shedule.CurrentRaceId != currentRaceId)
+			{
+				shedule.CurrentRaceId = currentRaceId;
+				hasChange = true;
+			}
+			if(shedule.NextRaceId != nextRaceId)
+			{
+				shedule.NextRaceId = nextRaceId;
+				hasChange = true;
+			}
 
 			return hasChange;
 		}
