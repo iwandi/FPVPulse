@@ -11,6 +11,9 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 		[ForeignKey(nameof(Race))]
 		public int RaceId { get; set; }
 
+		[ForeignKey(nameof(Event))]
+		public int EventId { get; set; }
+
 		public int InjestRacePilotId { get; set; }
 
 		[ForeignKey(nameof(RacePilot))]

@@ -59,7 +59,7 @@ namespace FPVPulse.LocalHost.Generator
 					var existingRacePilot = await db.RacePilots.Where(rp => rp.InjestRacePilotId == racePilotInjestId).FirstOrDefaultAsync();
 					if (existingRacePilot == null)
 					{
-						existingRacePilot = new RacePilot { InjestRacePilotId = racePilotInjestId, PilotId = existingPilot.PilotId };
+						existingRacePilot = new RacePilot { InjestRacePilotId = racePilotInjestId, PilotId = existingPilot.PilotId, EventId = eventId };
 						WriteData(existingRacePilot, dataPilot);
 						db.RacePilots.Add(existingRacePilot);
 					}
