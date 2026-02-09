@@ -15,13 +15,13 @@ namespace FPVPulse.LocalHost.Injest
         readonly ConcurrentQueue<QueueItem<InjestEvent>> eventQueue = new();
         readonly ConcurrentQueue<QueueItem<InjestRace>> raceQueue = new();
         readonly ConcurrentQueue<QueueItem<InjestPilotResult>> pilotResultQueue = new();
-		readonly ConcurrentQueue<QueueItem<InjestLeaderboard>> leaderabordQueue = new();
+		readonly ConcurrentQueue<QueueItem<InjestLeaderboard>> leaderboardQueue = new();
 		readonly SemaphoreSlim signal = new(0);
 
         public bool HasAnyItem => !eventQueue.IsEmpty ||
             !raceQueue.IsEmpty ||
             !pilotResultQueue.IsEmpty ||
-            !leaderabordQueue.IsEmpty;
+            !leaderboardQueue.IsEmpty;
 
         //readonly ILogger<InjestQueue> logger;
 
@@ -110,30 +110,30 @@ namespace FPVPulse.LocalHost.Injest
             return false;
 		}
 
-		public void Enqueue(string injestId, InjestLeaderboard leaderabord)
+		public void Enqueue(string injestId, InjestLeaderboard leaderboard)
 		{
 			/*var json = JsonConvert.SerializeObject(pilotResult);
             logger.LogInformation(injestId);
             logger.LogInformation(json);*/
 
-			leaderabordQueue.Enqueue(new QueueItem<InjestLeaderboard>
+			leaderboardQueue.Enqueue(new QueueItem<InjestLeaderboard>
 			{
 				InjestId = injestId,
-				Item = leaderabord
+				Item = leaderboard
 			});
 			signal.Release();
 		}
 
-		public bool TryDequeueLeaderabord(out string injestId, out InjestLeaderboard leaderabord)
+		public bool TryDequeueLeaderboard(out string injestId, out InjestLeaderboard leaderboard)
 		{
-			if (leaderabordQueue.TryDequeue(out var item))
+			if (leaderboardQueue.TryDequeue(out var item))
 			{
 				injestId = item.InjestId;
-				leaderabord = item.Item;
+				leaderboard = item.Item;
 				return true;
 			}
 			injestId = string.Empty;
-			leaderabord = null!;
+			leaderboard = null!;
 			return false;
 		}
 

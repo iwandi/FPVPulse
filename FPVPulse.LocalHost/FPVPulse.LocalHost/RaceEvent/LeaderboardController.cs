@@ -35,7 +35,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			return leaderboard;
 		}
 
-		[HttpGet("event/{eventId}/leaderabordIndex/")]
+		[HttpGet("event/{eventId}/leaderboardIndex/")]
 		public IEnumerable<IndexEntry> GetEventLeaderboardIndex(int eventId)
 		{
 			using var scope = serviceProvider.CreateScope();
@@ -48,7 +48,8 @@ namespace FPVPulse.LocalHost.RaceEvent
 			}).ToArray();
 		}
 
-		[HttpGet("event/{eventId}/leaderabord/{raceType}")]
+		[HttpGet("event/{eventId}/leaderboard/{raceType:int}")]
+		[HttpGet("event/{eventId}/leaderboard/{raceType:alpha}")]
 		public ActionResult<Leaderboard> GetEventLeaderboardByRaceType(int eventId, RaceType raceType)
 		{
 			using var scope = serviceProvider.CreateScope();

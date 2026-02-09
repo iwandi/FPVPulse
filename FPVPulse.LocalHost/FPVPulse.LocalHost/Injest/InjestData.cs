@@ -110,11 +110,11 @@ namespace FPVPulse.LocalHost.Injest
                 pr.InjestPilotId == injestPilotId);
 		}
 
-		public static void FillResult(InjestDbContext db, DbInjestLeaderboard? leaderabord)
+		public static void FillResult(InjestDbContext db, DbInjestLeaderboard? leaderboard)
 		{
-			if (leaderabord != null)
+			if (leaderboard != null)
 			{
-				leaderabord.Results = db.LeaderboardPilots.Where(r => r.LeaderboardId == leaderabord.LeaderboardId).ToArray();
+				leaderboard.Results = db.LeaderboardPilots.Where(r => r.LeaderboardId == leaderboard.LeaderboardId).ToArray();
 			}
 		}
 	}

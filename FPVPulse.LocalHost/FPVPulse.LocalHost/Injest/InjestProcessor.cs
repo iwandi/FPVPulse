@@ -37,8 +37,8 @@ namespace FPVPulse.LocalHost.Injest
                     await ProcessRace(db, injestId, race);
                 else if (queue.TryDequeuePilotResult(out injestId, out var pilotResult))
                     await ProcessPilotResult(db, injestId, pilotResult);
-				else if(queue.TryDequeueLeaderabord(out injestId, out var leaderboard))
-					await ProcessLeaderabord(db, injestId, leaderboard);
+				else if(queue.TryDequeueLeaderboard(out injestId, out var leaderboard))
+					await ProcessLeaderboard(db, injestId, leaderboard);
 
 				await queue.WaitForAnyAsync(stoppingToken);
             }
@@ -192,7 +192,7 @@ namespace FPVPulse.LocalHost.Injest
             await signaler.SignalChangeAsync(ChangeGroup.InjestPilotResult, existing.PilotResultId, raceId, existing);
         }
 
-        async Task ProcessLeaderabord(InjestDbContext? db, string injestId, InjestLeaderboard leaderboard)
+        async Task ProcessLeaderboard(InjestDbContext? db, string injestId, InjestLeaderboard leaderboard)
         {
 			bool hasChange = false;
             bool hasLeaderboardId = leaderboard.InjestLeaderboardId != null && !string.IsNullOrWhiteSpace(leaderboard.InjestLeaderboardId);

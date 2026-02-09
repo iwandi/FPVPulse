@@ -14,8 +14,8 @@ namespace FPVPulse.LocalHost.Signal
         public event EventHandler<ChangeEventArgs<DbInjestRace>>? OnInjestRaceChanged;
 		public event EventHandler<ChangeEventArgs<DbInjestRacePilot>>? OnInjestRacePilotChanged;
 		public event EventHandler<ChangeEventArgs<DbInjestPilotResult>>? OnInjestPilotResultChanged;
-		public event EventHandler<ChangeEventArgs<DbInjestLeaderboard>>? OnInjestLeaderabordChanged;
-		public event EventHandler<ChangeEventArgs<DbInjestLeaderboardPilot>>? OnInjestLeaderabordPilotChanged;
+		public event EventHandler<ChangeEventArgs<DbInjestLeaderboard>>? OnInjestLeaderboardChanged;
+		public event EventHandler<ChangeEventArgs<DbInjestLeaderboardPilot>>? OnInjestLeaderboardPilotChanged;
 
 		public event EventHandler<ChangeEventArgs<Event>>? OnEventChanged;
 		public event EventHandler<ChangeEventArgs<EventShedule>>? OnEventSheduleChanged;
@@ -62,8 +62,8 @@ namespace FPVPulse.LocalHost.Signal
 			changeHandler.Add(ChangeGroup.InjestRace, (obj) => OnInjestRaceChanged?.Invoke(this, (ChangeEventArgs<DbInjestRace>)obj));
 			changeHandler.Add(ChangeGroup.InjestRacePilot, (obj) => OnInjestRacePilotChanged?.Invoke(this, (ChangeEventArgs<DbInjestRacePilot>)obj));
 			changeHandler.Add(ChangeGroup.InjestPilotResult, (obj) => OnInjestPilotResultChanged?.Invoke(this, (ChangeEventArgs<DbInjestPilotResult>)obj));
-			changeHandler.Add(ChangeGroup.InjestLeaderboard, (obj) => OnInjestLeaderabordChanged?.Invoke(this, (ChangeEventArgs<DbInjestLeaderboard>)obj));
-			changeHandler.Add(ChangeGroup.InjestLeaderboardPilot, (obj) => OnInjestLeaderabordPilotChanged?.Invoke(this, (ChangeEventArgs<DbInjestLeaderboardPilot>)obj));
+			changeHandler.Add(ChangeGroup.InjestLeaderboard, (obj) => OnInjestLeaderboardChanged?.Invoke(this, (ChangeEventArgs<DbInjestLeaderboard>)obj));
+			changeHandler.Add(ChangeGroup.InjestLeaderboardPilot, (obj) => OnInjestLeaderboardPilotChanged?.Invoke(this, (ChangeEventArgs<DbInjestLeaderboardPilot>)obj));
 
 			changeHandler.Add(ChangeGroup.Event, (obj) => OnEventChanged?.Invoke(this, (ChangeEventArgs<Event>)obj));
 			changeHandler.Add(ChangeGroup.EventShedule, (obj) => OnEventSheduleChanged?.Invoke(this, (ChangeEventArgs<EventShedule>)obj));

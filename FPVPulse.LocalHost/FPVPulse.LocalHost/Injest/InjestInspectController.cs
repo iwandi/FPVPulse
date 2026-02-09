@@ -151,13 +151,13 @@ namespace FPVPulse.LocalHost.Injest
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
-			var leaderabord = db.Leaderboard.Where( (r) => r.EventId == eventId && r.RaceType == raceType).FirstOrDefault();
+			var leaderboard = db.Leaderboard.Where( (r) => r.EventId == eventId && r.RaceType == raceType).FirstOrDefault();
 
-			if (leaderabord == null)
+			if (leaderboard == null)
 				return NotFound();
 
-			InjestData.FillResult(db, leaderabord);
-			return leaderabord;
+			InjestData.FillResult(db, leaderboard);
+			return leaderboard;
 		}
 
 		[HttpGet("leaderboard/{leadrboardId}")]
@@ -166,13 +166,13 @@ namespace FPVPulse.LocalHost.Injest
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
-			var leaderabord = db.Leaderboard.Find(leadrboardId);
+			var leaderboard = db.Leaderboard.Find(leadrboardId);
 
-			if (leaderabord == null)
+			if (leaderboard == null)
 				return NotFound();
 
-			InjestData.FillResult(db, leaderabord);
-			return leaderabord;
+			InjestData.FillResult(db, leaderboard);
+			return leaderboard;
 		}
 	}
 }

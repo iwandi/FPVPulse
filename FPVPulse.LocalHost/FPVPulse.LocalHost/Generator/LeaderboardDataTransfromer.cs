@@ -15,7 +15,7 @@ namespace FPVPulse.LocalHost.Generator
 
 		public override void Bind(ChangeSignaler changeSignaler)
 		{
-			changeSignaler.OnInjestLeaderabordChanged += OnChanged;
+			changeSignaler.OnInjestLeaderboardChanged += OnChanged;
 		}
 
 		protected override async Task Process(EventDbContext db, DbInjestLeaderboard data, int id, int parentId)

@@ -15,7 +15,7 @@ namespace FPVPulse.Ingest
         string EventUrl;
         string RaceUrl;
         string PilotResultUrl;
-		string LeaderabordUrl;
+		string LeaderboardUrl;
 
 		JsonSerializerSettings jsonSerializerSettings;
 
@@ -44,7 +44,7 @@ namespace FPVPulse.Ingest
             EventUrl = $"{apiUrlRoot}/injest/event/";
             RaceUrl = $"{apiUrlRoot}/injest/race/";
             PilotResultUrl = $"{apiUrlRoot}/injest/race/";
-			LeaderabordUrl = $"{apiUrlRoot}/injest/leaderboard/";
+			LeaderboardUrl = $"{apiUrlRoot}/injest/leaderboard/";
 		}
 
         HttpRequestMessage BuildRequest<T>(T data, string url) where T : class
@@ -120,7 +120,7 @@ namespace FPVPulse.Ingest
 				Console.WriteLine("Error no valid ids");
 			}
 
-			var url = string.Concat(LeaderabordUrl, leaderboard.InjestEventId);
+			var url = string.Concat(LeaderboardUrl, leaderboard.InjestEventId);
 			var request = BuildRequest(leaderboard, url);
 			var response = await httpClient.SendAsync(request);
 			return response.EnsureSuccessStatusCode();
