@@ -7,10 +7,11 @@ namespace FPVPulse.LocalHost.Injest.Db
     {
         [Key]
         public int PilotResultId { get; set; }
-
-        // We allow a non assoiated PilotResult as we can map it later back
-        public int? RaceId { get; set; }
-        [Required]
+		
+		// We allow a non assoiated PilotResult as we can map it later back
+		public int? RaceId { get; set; }
+		public int? RacePilotId { get; set; }
+		[Required]
         public string InjestId { get; set; } = string.Empty;
 
         public DbInjestPilotResult()
@@ -18,13 +19,15 @@ namespace FPVPulse.LocalHost.Injest.Db
 
         }
 
-        public DbInjestPilotResult(string injestId, InjestPilotResult pilotResult, DbInjestRace? race)
+        public DbInjestPilotResult(string injestId, InjestPilotResult pilotResult, DbInjestRace? race, DbInjestRacePilot? pilot)
         {
             InjestId = injestId;
             if (race != null)
                 RaceId = race.RaceId;
+            if(pilot != null)
+				RacePilotId = pilot.RacePilotId;
 
-            InjestRaceId = pilotResult.InjestRaceId;
+			InjestRaceId = pilotResult.InjestRaceId;
             InjestPilotId = pilotResult.InjestPilotId;
             InjestPilotEntryId = pilotResult.InjestPilotEntryId;
 

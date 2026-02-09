@@ -1,4 +1,5 @@
 ﻿using FPVPulse.Ingest;
+using FPVPulse.LocalHost.Client;
 using FPVPulse.LocalHost.Client.Components.Data;
 using FPVPulse.LocalHost.Injest.Db;
 using FPVPulse.LocalHost.Signal;
@@ -21,16 +22,20 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			var existingLeaderboard = await db.Leaderboards.Where(l => l.InjestLeaderboardId == id).FirstOrDefaultAsync();
 
-			if(existingLeaderboard == null)
+			if (existingLeaderboard == null)
 			{
 				existingLeaderboard = new Leaderboard { InjestLeaderboardId = id };
-				Merge(existingLeaderboard, data);
+				WriteData(existingLeaderboard, data);
 				db.Leaderboards.Add(existingLeaderboard);
-				await db.SaveChangesAsync();
 			}
-			else if (Merge(existingLeaderboard, data))
-				await db.SaveChangesAsync();
-			
+			else
+				WriteData(existingLeaderboard, data);
+
+			var leaderboardHasChange = await db.SaveChangesAsync() > 0;
+
+			List<Pilot> changedPilot = new List<Pilot>();
+			List<LeaderboardPilot> pilots = new List<LeaderboardPilot>();
+			List<LeaderboardPilot> changedLeaderboardPilot = new List<LeaderboardPilot>();
 			if (data.Results != null && data.Results.Length > 0)
 			{
 				foreach (var injestResult in data.Results)
@@ -40,44 +45,54 @@ namespace FPVPulse.LocalHost.Generator
 						throw new Exception("Unexpected type DbInjestLeaderboard contains non DbInjestLeaderboardPilot in Results");
 
 					var injestPilotId = dataPilot.InjestPilotId;
-					var existingPilot = await db.MatchPilot(injestPilotId, dataPilot.InjestName);
+					var (existingPilot, pilotHasChanged) = await db.MatchPilot(injestPilotId, dataPilot.InjestName);
 
 					var leaderboardPilotInjestId = dataPilot.LeaderboardPilotId;
 					var existingLeaderboardPilot = await db.LeaderboardPilots.Where(lp => lp.InjestLeaderboardPilotId == leaderboardPilotInjestId).FirstOrDefaultAsync();
 					if (existingLeaderboardPilot == null)
 					{
-						existingLeaderboardPilot = new LeaderboardPilot { InjestLeaderboardPilotId = leaderboardPilotInjestId, PilotId = existingPilot.PilotId };
-						Merge(existingLeaderboardPilot, dataPilot, existingPilot.PilotId, parentId);
+						existingLeaderboardPilot = new LeaderboardPilot { LeaderboardId = existingLeaderboard.LeaderboardId, InjestLeaderboardPilotId = leaderboardPilotInjestId, PilotId = existingPilot.PilotId };
+						WriteData(existingLeaderboardPilot, dataPilot, existingPilot.PilotId, parentId);
 						db.LeaderboardPilots.Add(existingLeaderboardPilot);
-						await db.SaveChangesAsync();
 					}
-					else if (Merge(existingLeaderboardPilot, dataPilot, existingPilot.PilotId, parentId))
-						await db.SaveChangesAsync();
+					else
+						WriteData(existingLeaderboardPilot, dataPilot, existingPilot.PilotId, parentId);
+
+					var leaderboardPilotHasChanges = await db.SaveChangesAsync() > 0;
+
+					existingLeaderboardPilot.Pilot = existingPilot;
+					pilots.Add(existingLeaderboardPilot);
+
+					if (pilotHasChanged)
+						changedPilot.Add(existingPilot);
+					if (leaderboardPilotHasChanges)
+						changedLeaderboardPilot.Add(existingLeaderboardPilot);
 				}
 			}
+
+			existingLeaderboard.Pilots = pilots.ToArray();
+
+			if(leaderboardHasChange)
+				await changeSignaler.SignalChangeAsync(ChangeGroup.Leaderboard, existingLeaderboard.LeaderboardId, 0, existingLeaderboard);
+			foreach(var pilot in changedPilot)
+				await changeSignaler.SignalChangeAsync(ChangeGroup.Pilot, pilot.PilotId, 0, pilot);
+			foreach (var leaderboardPilot in changedLeaderboardPilot)
+				await changeSignaler.SignalChangeAsync(ChangeGroup.LeaderboardPilot, leaderboardPilot.LeaderboardPilotId, leaderboardPilot.LeaderboardId, leaderboardPilot);
 		}
 
-		bool Merge(Leaderboard leaderboard, DbInjestLeaderboard injestLeaderboard)
+		void WriteData(Leaderboard leaderboard, DbInjestLeaderboard injestLeaderboard)
 		{
-			bool changed = false;
-
-			MergeUtil.MergeEnumMember(ref leaderboard.RaceType, injestLeaderboard.RaceType);
-
-			return changed;
+			leaderboard.RaceType = injestLeaderboard.RaceType ?? RaceType.Unknown;
 		}
 
-		bool Merge(LeaderboardPilot leaderboardPilot, DbInjestLeaderboardPilot injestLeaderboardPilot, int pilotId, int positionReasonRaceId)
+		void WriteData(LeaderboardPilot leaderboardPilot, DbInjestLeaderboardPilot injestLeaderboardPilot, int pilotId, int positionReasonRaceId)
 		{
-			bool changed = false;
-
-			changed |= MergeUtil.MergeMember(ref leaderboardPilot.PilotId, pilotId);
-			changed |= MergeUtil.MergeMember(ref leaderboardPilot.Position, injestLeaderboardPilot.Position);
-			changed |= MergeUtil.MergeMember(ref leaderboardPilot.PositionDelta, injestLeaderboardPilot.PositionDelta);
-			changed |= MergeUtil.MergeMemberNullableString(ref leaderboardPilot.PositionReason, injestLeaderboardPilot.PositionReason);
-			changed |= MergeUtil.MergeMember(ref leaderboardPilot.PositionReasonRaceId, positionReasonRaceId);
-			changed |= MergeUtil.MergeEnumMember(ref leaderboardPilot.Flags, injestLeaderboardPilot.Flags);
-
-			return changed;
+			leaderboardPilot.PilotId = pilotId;
+			leaderboardPilot.Position = injestLeaderboardPilot.Position;
+			leaderboardPilot.PositionDelta = injestLeaderboardPilot.PositionDelta;
+			leaderboardPilot.PositionReason = injestLeaderboardPilot.PositionReason;
+			leaderboardPilot.PositionReasonRaceId = positionReasonRaceId;
+			leaderboardPilot.Flags = injestLeaderboardPilot.Flags;
 		}
 	}
 }

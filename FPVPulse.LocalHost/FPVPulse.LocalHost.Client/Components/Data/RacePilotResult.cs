@@ -8,35 +8,35 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class RacePilotResult
 	{
 		[Key]
-		public int RacePilotResultId;
+		public int RacePilotResultId { get; set; }
 
-		public int InjestPilotResultId;
+		public int InjestPilotResultId { get; set; }
 
-		[ForeignKey(nameof(RacePilot))]
-		public int RacePilotId;
+		//[ForeignKey(nameof(RacePilot))]
+		public int? LazyRacePilotId { get; set; }
 
-		public int? Position;
+		public int? Position { get; set; }
 
-		public int? CurrentSector;
-		public int? CurrentSplit;
+		public int? CurrentSector { get; set; }
+		public int? CurrentSplit { get; set; }
 
-		public DateTime? StartTime;
-		public DateTime? FinishTime;
+		public DateTime? StartTime { get; set; }
+		public DateTime? FinishTime { get; set; }
 
-		public int? LapCount;
-		public float? TotalTime;
+		public int? LapCount { get; set; }
+		public float? TotalTime { get; set; }
 
-		public float? TopLapTime;
-		public float? Top2ConsecutiveLapTime;
-		public float? Top3ConsecutiveLapTime;
+		public float? TopLapTime { get; set; }
+		public float? Top2ConsecutiveLapTime { get; set; }
+		public float? Top3ConsecutiveLapTime { get; set; }
 
-		public float? AverageLapTime;
+		public float? AverageLapTime { get; set; }
 
-		public bool? IsComplited;
+		public bool? IsComplited { get; set; }
 
-		public ResultFlag? Flags;
+		public ResultFlag? Flags { get; set; }
 
-		public Lap[]? Laps;
+		public Lap[]? Laps { get; set; }
 	}
 
 	public class Lap

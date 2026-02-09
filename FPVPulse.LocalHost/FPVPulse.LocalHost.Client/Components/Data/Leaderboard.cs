@@ -7,15 +7,15 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class Leaderboard
 	{
 		[Key]
-		public int LeaderboardId;
+		public int LeaderboardId { get; set; }
 
-		public int InjestLeaderboardId;
+		public int InjestLeaderboardId { get; set; }
 
 		[ForeignKey(nameof(Event))]
-		public int EventId;
-		public RaceType RaceType;
+		public int EventId { get; set; }
+		public RaceType RaceType { get; set; }
 
-		[ForeignKey("LeaderboardId")]
+		[NotMapped]
 		public LeaderboardPilot[]? Pilots { get; set; }
 	}
 }

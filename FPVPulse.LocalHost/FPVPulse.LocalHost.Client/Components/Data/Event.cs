@@ -6,20 +6,20 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class Event
 	{
 		[Key]
-		public int EventId;
+		public int EventId { get; set; }
 
-		public int InjestEventId;
+		public int InjestEventId { get; set; }
 
 		[MaxLength(30)]
-		public string Name = string.Empty;
+		public string Name { get; set; } = string.Empty;
 
-		public DateTime? StartDate;
-		public DateTime? EndDate;
+		public DateTime? StartDate { get; set; }
+		public DateTime? EndDate { get; set; }
 
-		[ForeignKey("EventId")]
+		//[ForeignKey("EventId")]
 		public EventShedule? Shedule { get; set; }
 
-		[ForeignKey("EventId")]
+		[NotMapped]
 		public Race[]? Races { get; set; }
 	}
 }

@@ -1,4 +1,6 @@
+using FPVPulse.LocalHost.Client.Components.Data;
 using FPVPulse.LocalHost.Components;
+using FPVPulse.LocalHost.Generator;
 using FPVPulse.LocalHost.Injest;
 using FPVPulse.LocalHost.Injest.Db;
 using FPVPulse.LocalHost.Signal;
@@ -34,7 +36,12 @@ namespace FPVPulse.LocalHost
                 builder.Services.AddSingleton<InjestQueue>();
                 builder.Services.AddHostedService<InjestProcessor>();
 
-                builder.Services.AddHttpContextAccessor();
+                builder.Services.AddHostedService<EventDataTransformer>();
+                builder.Services.AddHostedService<LeaderboardDataTransfromer>();
+                builder.Services.AddHostedService<RaceDataTransformer>();
+				builder.Services.AddHostedService<PilotResultDataTransformer>();
+
+				builder.Services.AddHttpContextAccessor();
                 builder.Services.AddScoped<HttpClient>(sp =>
                 {
                     var accessor = sp.GetRequiredService<IHttpContextAccessor>();
@@ -83,7 +90,24 @@ namespace FPVPulse.LocalHost
                     db.Database.Migrate();
                 }
 
-                app.Run();
+				using (var scope = app.Services.CreateScope())
+				{
+					var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
+					db.Database.EnsureCreated();
+					db.Database.Migrate();
+
+
+					/*var fks = db.Model
+						.FindEntityType(typeof(RacePilotResult))
+						.GetForeignKeys();
+
+					foreach (var fk in fks)
+					{
+						Console.WriteLine($"FK: {string.Join(",", fk.Properties.Select(p => p.Name))}");
+					}*/
+				}
+
+				app.Run();
             }
         }
     }

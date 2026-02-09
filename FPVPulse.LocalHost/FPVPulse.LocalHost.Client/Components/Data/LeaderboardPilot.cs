@@ -7,24 +7,27 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class LeaderboardPilot
 	{
 		[Key]
-		public int LeaderboardPilotId;
+		public int LeaderboardPilotId { get; set; }
 
-		public int InjestLeaderboardPilotId;
+		public int InjestLeaderboardPilotId { get; set; }
 
 		[ForeignKey(nameof(Leaderboard))]
-		public int LeaderboardId;
+		public int LeaderboardId { get; set; }
 
 		[ForeignKey(nameof(Pilot))]
-		public int PilotId;
+		public int PilotId { get; set; }
 
-		public int? Position;
-		public int? PositionDelta;
+		public int? Position { get; set; }
+		public int? PositionDelta { get; set; }
 
 		[MaxLength(30)]
-		public string? PositionReason;
-		[ForeignKey(nameof(Race))]
-		public int? PositionReasonRaceId;
+		public string? PositionReason { get; set; }
+		//[ForeignKey(nameof(Race))]
+		public int? PositionReasonRaceId { get; set; }
 
-		public LeaderboardPilotFlag? Flags;
+		public LeaderboardPilotFlag? Flags { get; set; }
+
+		//[ForeignKey("PilotId")]
+		public Pilot? Pilot { get; set; }
 	}
 }

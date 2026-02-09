@@ -33,13 +33,17 @@ namespace FPVPulse.LocalHost.Generator
 			if (existingRace == null)
 			{
 				existingRace = new Race { InjestRaceId = id, EventId = eventId };
-				Merge(existingRace, data);
+				WriteData(existingRace, data);
 				db.Races.Add(existingRace);
-				await db.SaveChangesAsync();
 			}
-			else if (Merge(existingRace, data))
-				await db.SaveChangesAsync();
+			else
+				WriteData(existingRace, data);
 
+			var raceHasChanges = await db.SaveChangesAsync() > 0;
+
+			List<Pilot> changedPilot = new List<Pilot>();
+			List<RacePilot> racePilots = new List<RacePilot>();
+			List<RacePilot> changedRacePilot = new List<RacePilot>();
 			if (data.Pilots != null && data.Pilots.Length > 0)
 			{
 				foreach (var injestPilot in data.Pilots)
@@ -49,46 +53,54 @@ namespace FPVPulse.LocalHost.Generator
 						throw new Exception("Unexpected type DbInjestRace contains non DbInjestRacePilot in Pilots");
 
 					var pilotInjestId = dataPilot.InjestPilotId;
-					var existingPilot = await db.MatchPilot(pilotInjestId, dataPilot.InjestName);
+					var (existingPilot, pilotHasChanges) = await db.MatchPilot(pilotInjestId, dataPilot.InjestName);
 
 					var racePilotInjestId = dataPilot.RacePilotId;
 					var existingRacePilot = await db.RacePilots.Where(rp => rp.InjestRacePilotId == racePilotInjestId).FirstOrDefaultAsync();
-					if(existingRacePilot == null)
+					if (existingRacePilot == null)
 					{
 						existingRacePilot = new RacePilot { InjestRacePilotId = racePilotInjestId, PilotId = existingPilot.PilotId };
-						Merge(existingRacePilot, dataPilot);
+						WriteData(existingRacePilot, dataPilot);
 						db.RacePilots.Add(existingRacePilot);
-						await db.SaveChangesAsync();
 					}
-					else if(Merge(existingRacePilot, dataPilot))
-						await db.SaveChangesAsync();
+					else
+						WriteData(existingRacePilot, dataPilot);
+
+					var racePilotHasChanges = await db.SaveChangesAsync() > 0;
+
+					existingRacePilot.Pilot = existingPilot;
+					if(pilotHasChanges)
+						changedPilot.Add(existingPilot);
+					if(racePilotHasChanges)
+						changedRacePilot.Add(existingRacePilot);
 				}
 			}
+
+			existingRace.Pilots = racePilots.ToArray();
+
+			if(raceHasChanges)
+				changeSignaler.SignalChangeAsync(ChangeGroup.Race, existingRace.RaceId, existingRace.EventId, existingRace);
+			foreach (var pilot in changedPilot)
+				changeSignaler.SignalChangeAsync(ChangeGroup.Pilot, pilot.PilotId, 0, pilot);
+			foreach (var racePilot in changedRacePilot)
+				changeSignaler.SignalChangeAsync(ChangeGroup.RacePilot, racePilot.RacePilotId, racePilot.PilotId, racePilot);
 		}
 
-		bool Merge(Race race, DbInjestRace injestRace)
+		void WriteData(Race race, DbInjestRace injestRace)
 		{
-			bool hasChange = false;
-
-			hasChange |= MergeUtil.MergeMemberString(ref race.Name, injestRace.InjestRaceId);
-			hasChange |= MergeUtil.MergeEnumMember(ref race.RaceType, injestRace.RaceType);
-			hasChange |= MergeUtil.MergeEnumMember(ref race.RaceLayout, injestRace.RaceLayout);
-			hasChange |= MergeUtil.MergeMember(ref race.FirstOrderPoistion, injestRace.FirstOrderPoistion);
-			hasChange |= MergeUtil.MergeMember(ref race.SecondOrderPosition, injestRace.SecondOrderPosition);
-
-			return hasChange;
+			race.Name = injestRace.InjestName ?? string.Empty;
+			race.RaceType = injestRace.RaceType ?? RaceType.Unknown;
+			race.RaceLayout = injestRace.RaceLayout ?? RaceLayout.Unknown;
+			race.FirstOrderPoistion = injestRace.FirstOrderPoistion ?? 0;
+			race.SecondOrderPosition = injestRace.SecondOrderPosition ?? 0;
 		}
 
-		bool Merge(RacePilot racePilot, DbInjestRacePilot injestRacePilot)
+		void WriteData(RacePilot racePilot, DbInjestRacePilot injestRacePilot)
 		{
-			bool hasChange = false;
-
-			hasChange |= MergeUtil.MergeMember(ref racePilot.SeedPosition, injestRacePilot.SeedPosition);
-			hasChange |= MergeUtil.MergeMember(ref racePilot.StartPosition, injestRacePilot.StartPosition);
-			hasChange |= MergeUtil.MergeMember(ref racePilot.Position, injestRacePilot.Position);
-			hasChange |= MergeUtil.MergeMemberString(ref racePilot.Channel, injestRacePilot.Channel);
-
-			return hasChange;
+			racePilot.SeedPosition = injestRacePilot.SeedPosition;
+			racePilot.StartPosition = injestRacePilot.StartPosition ?? 0;
+			racePilot.Position = injestRacePilot.Position ?? 0;
+			racePilot.Channel = injestRacePilot.Channel ?? string.Empty;
 		}
 	}
 }

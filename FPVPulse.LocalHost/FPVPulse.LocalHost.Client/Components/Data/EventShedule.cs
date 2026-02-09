@@ -7,19 +7,19 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 	public class EventShedule
 	{
 		[Key]
-		public int EventSheduleId;
+		public int EventSheduleId { get; set; }
 
-		public int InjestEventId;
+		public int InjestEventId { get; set; }
 
 		[ForeignKey(nameof(Event))]
-		public int EventId;
+		public int EventId { get; set; }
 
-		public int? CurrentRaceId;
-		public int? NextRaceId;
+		public int? CurrentRaceId { get; set; }
+		public int? NextRaceId { get; set; }
 
-		public TimeSpan? RaceTimeLimit;
+		public TimeSpan? RaceTimeLimit { get; set; }
 
-		public DateTime? CurrentRaceStartTime;
-		public DateTime? NextRaceStartTime;
+		public DateTime? CurrentRaceStartTime { get; set; }
+		public DateTime? NextRaceStartTime { get; set; }
 	}
 }

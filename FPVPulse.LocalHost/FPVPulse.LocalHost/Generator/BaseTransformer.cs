@@ -9,7 +9,7 @@ namespace FPVPulse.LocalHost.Generator
 	public abstract class BaseTransformer<T> : BackgroundService
 	{
 		readonly IServiceProvider serviceProvider;
-		readonly ChangeSignaler changeSignaler;
+		protected readonly ChangeSignaler changeSignaler;
 
 		ConcurrentQueue<ChangeEventArgs<T>> queue = new ConcurrentQueue<ChangeEventArgs<T>>();
 		readonly SemaphoreSlim signal = new(0);
@@ -32,11 +32,10 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
-			var injestDb = scope.ServiceProvider.GetRequiredService<InjestDbContext>();
 
 			while (!stoppingToken.IsCancellationRequested)
 			{
-				try
+				//try
 				{
 					if (queue.TryDequeue(out var @event))
 					{
@@ -45,10 +44,10 @@ namespace FPVPulse.LocalHost.Generator
 
 					await signal.WaitAsync(stoppingToken);
 				}
-				catch (Exception ex)
+				/*catch (Exception ex)
 				{
 					Console.WriteLine($"Error in Transformer: {ex}");
-				}
+				}*/
 			}
 		}
 
