@@ -35,7 +35,9 @@ namespace FPVPulse.LocalHost.Generator
 
 			while (!stoppingToken.IsCancellationRequested)
 			{
-				//try
+#if !DEBUG
+				try
+#endif
 				{
 					if (queue.TryDequeue(out var @event))
 					{
@@ -44,10 +46,12 @@ namespace FPVPulse.LocalHost.Generator
 
 					await signal.WaitAsync(stoppingToken);
 				}
-				/*catch (Exception ex)
+#if !DEBUG
+				catch (Exception ex)
 				{
 					Console.WriteLine($"Error in Transformer: {ex}");
-				}*/
+				}				
+#endif
 			}
 		}
 
