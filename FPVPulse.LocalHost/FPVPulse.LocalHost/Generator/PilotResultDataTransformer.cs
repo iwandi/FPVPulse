@@ -21,17 +21,17 @@ namespace FPVPulse.LocalHost.Generator
 
 		protected override async Task Process(EventDbContext db, DbInjestPilotResult data, int id, int parentId)
 		{
-			var getRacePilotId = db.RacePilots.Where(e => e.InjestRacePilotId == parentId).Select(e => e.RaceId).FirstOrDefaultAsync();
+			var getRacePilotId = db.RacePilots.Where(e => e.InjestRacePilotId == parentId).Select(e => new { e.RaceId, e.PilotId }).FirstOrDefaultAsync();
 			var getExistingPilot = db.RacePilotResults.Where(pr => pr.InjestPilotResultId == id).FirstOrDefaultAsync();
 
 			await Task.WhenAll(getRacePilotId, getExistingPilot);
 
-			var racePilotId = getRacePilotId.Result;
+			var racePilotResult = getRacePilotId.Result;
 			var existingPilotResult = getExistingPilot.Result;
 
 			if (existingPilotResult == null)
 			{
-				existingPilotResult = new RacePilotResult { LazyRacePilotId = racePilotId, InjestPilotResultId = id };
+				existingPilotResult = new RacePilotResult { LazyRaceId = racePilotResult?.RaceId, LazyRacePilotId = racePilotResult?.PilotId, InjestPilotResultId = id };
 				WriteData(existingPilotResult, data);
 				db.RacePilotResults.Add(existingPilotResult);
 			}

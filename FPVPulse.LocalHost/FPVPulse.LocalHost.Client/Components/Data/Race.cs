@@ -15,7 +15,7 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 		public int EventId { get; set; }
 
 		[MaxLength(30)]
-		public string Name = string.Empty;
+		public string Name { get; set; } = string.Empty;
 		public RaceType RaceType { get; set; }
 
 		public RaceLayout RaceLayout { get; set; }

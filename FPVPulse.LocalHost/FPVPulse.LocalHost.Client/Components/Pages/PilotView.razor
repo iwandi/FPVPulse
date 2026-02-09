@@ -1,7 +1,28 @@
-﻿@page "/pilot/{pilotId}"
+﻿@page "/pilot/{pilotId:int}"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using FPVPulse.LocalHost.Client.Components.Data
 <h3>PilotView</h3>
 
+@if(pilot != null)
+{
+	<code>@Newtonsoft.Json.JsonConvert.SerializeObject(pilot)</code>
+}
+else
+{
+	<p>Loading ...</p>
+}
+
 @code {
-    [Parameter]
-    public int pilotId { get; set; }
+	[Parameter]
+	public int pilotId { get; set; }
+
+	Pilot pilot;
+
+	protected override async Task OnInitializedAsync()
+	{
+		pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{pilotId}");
+
+		StateHasChanged();
+	}
 }

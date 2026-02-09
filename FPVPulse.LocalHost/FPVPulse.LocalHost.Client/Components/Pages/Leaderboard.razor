@@ -1,0 +1,28 @@
+﻿@page "/leaderboard/{leaderboardId:int}"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using FPVPulse.LocalHost.Client.Components.Data
+<h3>Leaderboard</h3>
+
+@if (leaderboard != null)
+{
+		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard)</code>
+}
+else
+{
+		<p>Loading ...</p>
+}
+
+@code {
+    [Parameter]
+	public int leaderboardId { get; set; }
+
+	Leaderboard leaderboard;
+
+	protected override async Task OnInitializedAsync()
+	{
+		leaderboard = await Http.GetFromJsonAsync<Leaderboard>($"api/leaderboard/{leaderboardId}");
+
+		StateHasChanged();
+	}
+}

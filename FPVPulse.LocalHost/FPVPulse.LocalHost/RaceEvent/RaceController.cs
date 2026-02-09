@@ -27,6 +27,10 @@ namespace FPVPulse.LocalHost.RaceEvent
 
 			if (race == null)
 				return NotFound();
+
+			race.Pilots = db.RacePilots.Where(e => e.RaceId == raceId).ToArray();
+			race.Results = db.RacePilotResults.Where(e => e.LazyRaceId == raceId).ToArray();
+
 			return race;
 		}
 
@@ -38,7 +42,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 
 			return db.Races.Where(e => e.EventId == eventId).Select(e => new IndexEntry
 			{
-				Id = e.EventId,
+				Id = e.RaceId,
 				Name = e.Name,
 			}).ToArray();
 		}

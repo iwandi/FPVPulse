@@ -1,7 +1,10 @@
-﻿@page "/event/{eventId}/leaderboard"
+﻿@page "/event/{eventId:int}/leaderboard"
+@page "/event/{eventId:int}/leaderboard/{raceType}"
 <h3>EventLeaderboard</h3>
 
 @code {
     [Parameter]
     public int eventId { get; set; }
+    [Parameter]
+    public string? raceType { get; set; }
 }

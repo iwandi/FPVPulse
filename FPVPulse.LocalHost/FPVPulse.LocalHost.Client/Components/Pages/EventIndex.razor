@@ -1,8 +1,28 @@
 ﻿@page "/events"
+@page "/"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
 <h3>Events</h3>
 
+@if (index != null)
+{
+	@foreach (var entry in index)
+	{
+		<a href="/event/@entry.Id">@entry.Name : @entry.Id</a>
+	}
+}
+else
+{
+		<p>Loading...</p>
+}
 
 
 @code {
+	IndexEntry[] index;
 
+	protected override async Task OnInitializedAsync()
+	{
+		index = await Http.GetFromJsonAsync<IndexEntry[]>("api/eventIndex/");
+		StateHasChanged();
+	}
 }
