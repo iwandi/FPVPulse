@@ -1,13 +1,15 @@
 ﻿@page "/pilot/{pilotId:int}"
+@rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
 @using Newtonsoft.Json
+@inject IJSRuntime JS
 <h3>PilotView</h3>
 
 @if(pilot != null)
 {
-		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(pilot, Formatting.Indented)</code>
+	<code>@Newtonsoft.Json.JsonConvert.SerializeObject(pilot, Formatting.Indented)</code>
 }
 else
 {

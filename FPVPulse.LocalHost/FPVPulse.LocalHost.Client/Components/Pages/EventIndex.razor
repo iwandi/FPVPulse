@@ -1,7 +1,9 @@
 ﻿@page "/events"
 @page "/"
+@rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@inject IJSRuntime JS
 <h3>Events</h3>
 
 @if (index != null)

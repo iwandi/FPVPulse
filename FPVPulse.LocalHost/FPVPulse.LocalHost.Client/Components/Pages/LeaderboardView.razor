@@ -1,21 +1,23 @@
 ﻿@page "/leaderboard/{leaderboardId:int}"
+@rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
 @using Newtonsoft.Json
+@inject IJSRuntime JS
 <h3>Leaderboard</h3>
 
 @if (leaderboard != null)
 {
-		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard, Formatting.Indented)</code>
+	<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard, Formatting.Indented)</code>
 }
 else
 {
-		<p>Loading ...</p>
+	<p>Loading ...</p>
 }
 
 @code {
-    [Parameter]
+	[Parameter]
 	public int leaderboardId { get; set; }
 
 	Leaderboard leaderboard;

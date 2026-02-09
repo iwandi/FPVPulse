@@ -1,8 +1,10 @@
 ﻿@page "/event/{eventId:int}/pilot/{pilotId:int}"
+@rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
 @using Newtonsoft.Json
+@inject IJSRuntime JS
 <h3>Event Pilot View</h3>
 
 @if (pilot != null)

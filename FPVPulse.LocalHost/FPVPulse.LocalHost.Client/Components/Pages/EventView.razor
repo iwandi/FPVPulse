@@ -1,8 +1,10 @@
 ﻿@page "/event/{eventId:int}"
+@rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
 @using Newtonsoft.Json
+@inject IJSRuntime JS
 <h3>EventView</h3>
 
 @if (eventData != null)
@@ -11,6 +13,8 @@
 		<div class="card-body">
 			<h5 class="card-title">@eventData.Name</h5>
 		</div>
+		<a href="/event/@eventId/leaderboards">EventLeaderboards</a><br />
+		<a href="/event/@eventId/pilots">EventPilots</a><br />
 		<h5 class="card-title">Races</h5><br />
 		@foreach (var race in raceIndex)
 		{
@@ -21,7 +25,7 @@
 		{
 			<a href="/event/@eventId/pilot/@pilot.Id">@pilot.Name : @pilot.Id</a><br />
 		}
-		<h5 class="card-title">Leaderabords</h5>
+		<h5 class="card-title">Leaderboards</h5>
 		@foreach (var leaerboard in leaderboarIndex)
 		{
 			<a href="/leaderboard/@leaerboard.Id">@leaerboard.Name : @leaerboard.Id</a><br />
@@ -49,7 +53,7 @@ else
 		eventData = await Http.GetFromJsonAsync<Event>($"api/event/{eventId}");
 		raceIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/raceIndex");
 		pilotIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/pilotIndex");
-		leaderboarIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/leaderabordIndex");
+		leaderboarIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/leaderboardIndex");
 
 		StateHasChanged();
 	}

@@ -1,8 +1,10 @@
 ﻿@page "/race/{raceId:int}"
+@rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
 @using Newtonsoft.Json
+@inject IJSRuntime JS
 <h3>RaceView</h3>
 
 @if (race != null)

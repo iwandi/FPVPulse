@@ -248,7 +248,7 @@ else
 			try
 			{
 				var leaderboard = await Http.GetFromJsonAsync<InjestLeaderboard>($"api/injest/inspect/event/{currentEventId}/leaderboard/{raceType}");
-				StoreInjestLeaderabord(raceType, leaderboard);
+				StoreInjestLeaderboard(raceType, leaderboard);
 			}
 			catch(System.Net.Http.HttpRequestException ex)
 			{
@@ -317,7 +317,7 @@ else
 			var raceType = leaderboard.RaceType;
 			if (raceType.HasValue)
 			{
-				StoreInjestLeaderabord(raceType.Value, leaderboard);
+				StoreInjestLeaderboard(raceType.Value, leaderboard);
 				InvokeAsync(StateHasChanged);
 			}
 		}
@@ -355,13 +355,13 @@ else
 		}
 	}
 
-	void StoreInjestLeaderabord(RaceType raceType, InjestLeaderboard? leaderboard)
+	void StoreInjestLeaderboard(RaceType raceType, InjestLeaderboard? leaderboard)
 	{
 		lock (leaderboardLock)
 		{
 			if (leaderboard != null)
 			{
-				JS.InvokeVoidAsync("Console.log", "StoreInjestLeaderabord", raceType, leaderboard);
+				JS.InvokeVoidAsync("Console.log", "StoreInjestLeaderboard", raceType, leaderboard);
 			}
 
 			if (leaderboard != null)

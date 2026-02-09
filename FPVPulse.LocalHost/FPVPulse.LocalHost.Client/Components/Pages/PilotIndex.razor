@@ -1,6 +1,42 @@
 ﻿@page "/pilots"
+@rendermode InteractiveWebAssembly
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using FPVPulse.LocalHost.Client.Components.Data
+@using Newtonsoft.Json
+@inject IJSRuntime JS
 <h3>PilotsIndex</h3>
 
+@if (index != null && pilots != null)
+{
+	@foreach (var entry in index)
+	{
+		<a href="/pilot/@entry.Id">@entry.Name</a> <br />
+		if (pilots.TryGetValue(@entry.Id, out var pilot))
+		{
+			<code>@JsonConvert.SerializeObject(pilot, Formatting.Indented)</code>			
+		}
+	}
+}
+else
+{
+		<p>Loading ...</p>
+}
+
 @code {
+	IndexEntry[] index;
+	Dictionary<int, Pilot> pilots = new Dictionary<int, Pilot>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		index = await Http.GetFromJsonAsync<IndexEntry[]>($"api/pilotIndex");
+		foreach (var entry in index)
+		{
+			var pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{entry.Id}");
+			pilots[entry.Id] = pilot;
+		}
+
+		StateHasChanged();
+	}
 
 }

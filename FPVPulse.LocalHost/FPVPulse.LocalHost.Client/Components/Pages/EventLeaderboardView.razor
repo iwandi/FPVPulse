@@ -1,0 +1,65 @@
+﻿@page "/event/{eventId:int}/leaderboards"
+@page "/event/{eventId:int}/leaderboard/{raceTypeStr}"
+@rendermode InteractiveWebAssembly
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using FPVPulse.Ingest
+@using FPVPulse.LocalHost.Client.Components.Data
+@using Newtonsoft.Json
+@inject IJSRuntime JS
+<h3>EventLeaderboard</h3>
+
+@if (leaderboards != null)
+{
+	@foreach(var leaderboard in leaderboards)
+	{
+		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard, Formatting.Indented)</code>
+	}
+}
+else
+{
+	<p>Loading ...</p>
+}
+
+
+@code {
+	[Parameter]
+	public int eventId { get; set; }
+	[Parameter]
+	public string? raceTypeStr { get; set; }
+	List<Leaderboard> leaderboards = new List<Leaderboard>();
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (!Enum.TryParse<RaceType>(raceTypeStr, out var raceType))
+			raceType = RaceType.Unknown;
+
+		if (raceType == RaceType.Unknown)
+		{
+			await SaveLoadLeaderboard(eventId, RaceType.Practice, leaderboards);
+			await SaveLoadLeaderboard(eventId, RaceType.Qualifying, leaderboards);
+		}
+		else
+		{
+			await SaveLoadLeaderboard(eventId, raceType, leaderboards);
+		}
+
+		StateHasChanged();
+	}
+
+	async Task SaveLoadLeaderboard(int eventId, RaceType raceType, List<Leaderboard> leaderboards)
+	{
+		try
+		{
+			var leaderboard = await Http.GetFromJsonAsync<Leaderboard>($"api/event/{eventId}/leaderboard/{raceType}");
+			leaderboards.Add(leaderboard);
+		}
+		catch (Exception ex)
+		{
+			var httpEx = ex as System.Net.Http.HttpRequestException;
+			if (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+				return;
+			throw ex;
+		}
+	}
+}
