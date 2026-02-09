@@ -21,6 +21,30 @@
 
 		InjestLeaderboardPilot,
 		InjestLeaderboardPilotData,
+
+		Event,
+		EventData,
+
+		EventShedule,
+		EventSheduleData,
+
+		Leaderboard,
+		LeaderboardData,
+
+		LeaderboardPilot,
+		LeaderboardPilotData,
+
+		Pilot,
+		PilotData,
+
+		Race,
+		RaceData,
+
+		RacePilot,
+		RacePilotData,
+
+		RacePilotResult,
+		RacePilotResultData,
 	}
 
     public class ChangeEventArgs<T> : EventArgs
@@ -48,8 +72,17 @@
 		public static string ChangeInjestEventData = "CIED";
 		public static string ChangeInjestRaceData = "CIRC";
 		public static string ChangeInjestRacePilotData = "CIRPD";
-		public static string ChangeInjestPoilotResultData = "CIPRD";
+		public static string ChangeInjestPilotResultData = "CIPRD";
 		public static string ChangeInjestLeaderboardData = "CILD";
 		public static string ChangeInjestLeaderboardPilotData = "CILPD";
+
+		public static string ChangeEventData = "CED";
+		public static string ChangeEventSheduleData = "CESD";
+		public static string ChangeLeaderboardData = "CLD";
+		public static string ChangeLeaderboardPilotData = "CLPD";
+		public static string ChangePilotData = "CPD";
+		public static string ChangeRaceData = "CRD";
+		public static string ChangeRacePilotData = "CRPD";
+		public static string ChangeRacePilotResultData = "CRPRD";
 	}
 }

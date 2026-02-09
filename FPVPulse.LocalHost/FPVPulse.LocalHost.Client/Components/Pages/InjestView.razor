@@ -143,7 +143,7 @@ else
 
 		hubConnection.On<int, int, InjestEvent>(ChangeSignalMessages.ChangeInjestEventData, OnSignalChangeEventData);
 		hubConnection.On<int, int, InjestRace>(ChangeSignalMessages.ChangeInjestRaceData, OnSignalChangeRaceData);
-		hubConnection.On<int, int, InjestPilotResult>(ChangeSignalMessages.ChangeInjestPoilotResultData, OnSignalChangePilotResultData);
+		hubConnection.On<int, int, InjestPilotResult>(ChangeSignalMessages.ChangeInjestPilotResultData, OnSignalChangePilotResultData);
 		hubConnection.On<int, int, InjestLeaderboard>(ChangeSignalMessages.ChangeInjestLeaderboardData, OnSignalChangeLeaderboardData);
 		await hubConnection.StartAsync();
 		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.InjestEventData);
