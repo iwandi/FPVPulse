@@ -21,5 +21,8 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 
 		[NotMapped]
 		public Race[]? Races { get; set; }
+
+		[NotMapped]
+		public Leaderboard[]? Leaderboards { get; set; }
 	}
 }

@@ -3,6 +3,8 @@ using FPVPulse.LocalHost.Client.Components.Data;
 using FPVPulse.LocalHost.Injest.Db;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace FPVPulse.LocalHost.RaceEvent
 {
@@ -28,8 +30,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			if (race == null)
 				return NotFound();
 
-			race.Pilots = db.RacePilots.Where(e => e.RaceId == raceId).ToArray();
-			race.Results = db.RacePilotResults.Where(e => e.LazyRaceId == raceId).ToArray();
+			FillRace(db, race).Wait();
 
 			return race;
 		}
@@ -68,7 +69,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 		}
 
 		[HttpGet("racePilot/{racePilotId}")]
-		public ActionResult<RacePilot> GetRacePilot(int racePilotId)
+		public async Task<ActionResult<RacePilot>> GetRacePilot(int racePilotId)
 		{
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
@@ -77,6 +78,9 @@ namespace FPVPulse.LocalHost.RaceEvent
 
 			if (racePilot == null)
 				return NotFound();
+
+			FillRacePilot(db, racePilot).Wait();
+
 			return racePilot;
 		}
 
@@ -91,6 +95,22 @@ namespace FPVPulse.LocalHost.RaceEvent
 			if (result == null)
 				return NotFound();
 			return result;
+		}
+
+		public static async Task FillRace(EventDbContext db, Race race)
+		{
+			race.Results = await db.RacePilotResults.Where(e => e.LazyRaceId == race.RaceId).ToArrayAsync();
+			race.Pilots = await db.RacePilots.Where(e => e.RaceId == race.RaceId).ToArrayAsync();
+
+			foreach (var pilot in race.Pilots)
+			{
+				await FillRacePilot(db, pilot);
+			}
+		}
+
+		public static async Task FillRacePilot(EventDbContext db, RacePilot pilot)
+		{
+			pilot.Pilot = await db.Pilots.Where(p => p.PilotId == pilot.PilotId).FirstOrDefaultAsync();
 		}
 	}
 }

@@ -1,10 +1,47 @@
 ﻿@page "/event/{eventId:int}/leaderboard"
-@page "/event/{eventId:int}/leaderboard/{raceType}"
+@page "/event/{eventId:int}/leaderboard/{raceTypeStr}"
+@inject HttpClient Http
+@inject NavigationManager NavigationManager
+@using FPVPulse.Ingest
+@using FPVPulse.LocalHost.Client.Components.Data
+@using Newtonsoft.Json
 <h3>EventLeaderboard</h3>
 
+@if (leaderboards != null)
+{
+	@foreach(var leaderboard in leaderboards)
+	{
+		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard, Formatting.Indented)</code>
+	}
+}
+else
+{
+	<p>Loading ...</p>
+}
+
+
 @code {
-    [Parameter]
-    public int eventId { get; set; }
-    [Parameter]
-    public string? raceType { get; set; }
+	[Parameter]
+	public int eventId { get; set; }
+	[Parameter]
+	public string? raceTypeStr { get; set; }
+	List<Leaderboard> leaderboards;
+
+	protected override async Task OnInitializedAsync()
+	{
+		if (!Enum.TryParse<RaceType>(raceTypeStr, out var raceType))
+			raceType = RaceType.Unknown;
+
+		if (raceType == RaceType.Unknown)
+		{
+			leaderboards.Add(await Http.GetFromJsonAsync<Leaderboard>($"api/event/{eventId}/leaderboard/{RaceType.Practice}"));
+			leaderboards.Add(await Http.GetFromJsonAsync<Leaderboard>($"api/event/{eventId}/leaderboard/{RaceType.Mains}"));
+		}
+		else
+		{
+			leaderboards.Add(await Http.GetFromJsonAsync<Leaderboard>($"api/event/{eventId}/leaderboard/{raceType}"));
+		}
+
+		StateHasChanged();
+	}
 }

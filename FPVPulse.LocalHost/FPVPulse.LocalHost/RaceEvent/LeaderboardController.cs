@@ -4,6 +4,7 @@ using FPVPulse.LocalHost.Client.Components.Data;
 using FPVPulse.LocalHost.Injest.Db;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FPVPulse.LocalHost.RaceEvent
 {
@@ -28,6 +29,9 @@ namespace FPVPulse.LocalHost.RaceEvent
 
 			if (leaderboard == null)
 				return NotFound();
+
+			FillLeaderboard(db, leaderboard).Wait();
+
 			return leaderboard;
 		}
 
@@ -55,7 +59,14 @@ namespace FPVPulse.LocalHost.RaceEvent
 			if (leaderboard == null)
 				return NotFound();
 
+			FillLeaderboard(db, leaderboard).Wait();
+
 			return leaderboard;
+		}
+
+		public static async Task FillLeaderboard(EventDbContext db, Leaderboard leaderboard)
+		{
+			leaderboard.Pilots = await db.LeaderboardPilots.Where(lp => lp.LeaderboardId == leaderboard.LeaderboardId).ToArrayAsync();
 		}
 	}
 }

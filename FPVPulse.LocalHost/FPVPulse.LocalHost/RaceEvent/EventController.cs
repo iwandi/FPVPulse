@@ -3,6 +3,8 @@ using FPVPulse.LocalHost.Client.Components.Data;
 using FPVPulse.LocalHost.Injest.Db;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using System.Threading.Tasks;
 
 namespace FPVPulse.LocalHost.RaceEvent
 {
@@ -18,7 +20,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 		}
 
 		[HttpGet("event/{eventId}")]
-		public ActionResult<Event> GetEvent(int eventId)
+		public async Task<ActionResult<Event>> GetEvent(int eventId)
 		{
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
@@ -27,6 +29,9 @@ namespace FPVPulse.LocalHost.RaceEvent
 
 			if (@event == null)
 				return NotFound();
+
+			await FillEvent(db, @event);
+
 			return @event;
 		}
 
@@ -55,6 +60,23 @@ namespace FPVPulse.LocalHost.RaceEvent
 				return NotFound();
 
 			return shedule;
+		}
+
+		public static async Task FillEvent(EventDbContext db, Event @event)
+		{
+			@event.Shedule = await db.EventShedules.Where( e => e.EventId == @event.EventId).FirstOrDefaultAsync();
+
+			@event.Races = await db.Races.Where(r => r.EventId == @event.EventId).ToArrayAsync();
+			foreach(var race in @event.Races)
+			{
+				await RaceController.FillRace(db, race);
+			}
+
+			@event.Leaderboards = await db.Leaderboards.Where(l => l.EventId == @event.EventId).ToArrayAsync();
+			foreach (var leaderboard in @event.Leaderboards)
+			{
+				await LeaderboardController.FillLeaderboard(db, leaderboard);
+			}
 		}
 	}
 }

@@ -20,11 +20,12 @@ namespace FPVPulse.LocalHost.Generator
 
 		protected override async Task Process(EventDbContext db, DbInjestLeaderboard data, int id, int parentId)
 		{
+			var @event = await db.Events.Where(e => e.InjestEventId == parentId).FirstOrDefaultAsync();
 			var existingLeaderboard = await db.Leaderboards.Where(l => l.InjestLeaderboardId == id).FirstOrDefaultAsync();
 
 			if (existingLeaderboard == null)
 			{
-				existingLeaderboard = new Leaderboard { InjestLeaderboardId = id };
+				existingLeaderboard = new Leaderboard { InjestLeaderboardId = id, EventId = @event.EventId };
 				WriteData(existingLeaderboard, data);
 				db.Leaderboards.Add(existingLeaderboard);
 			}

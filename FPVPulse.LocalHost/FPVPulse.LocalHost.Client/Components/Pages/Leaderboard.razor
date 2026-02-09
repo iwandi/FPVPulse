@@ -2,11 +2,12 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
+@using Newtonsoft.Json
 <h3>Leaderboard</h3>
 
 @if (leaderboard != null)
 {
-		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard)</code>
+		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard, Formatting.Indented)</code>
 }
 else
 {

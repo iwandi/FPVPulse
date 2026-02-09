@@ -3,6 +3,7 @@ using FPVPulse.LocalHost.Client.Components.Data;
 using FPVPulse.LocalHost.Injest.Db;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
 
 namespace FPVPulse.LocalHost.RaceEvent
 {

@@ -2,6 +2,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
+@using Newtonsoft.Json
 <h3>EventView</h3>
 
 @if (eventData != null)
@@ -26,6 +27,7 @@
 			<a href="/leaderboard/@leaerboard.Id">@leaerboard.Name : @leaerboard.Id</a><br />
 		}
 	</div>
+	<code>@Newtonsoft.Json.JsonConvert.SerializeObject(eventData, Formatting.Indented)</code>
 }
 else
 {
