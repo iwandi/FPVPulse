@@ -22,6 +22,14 @@ namespace FPVPulse.LocalHost.Generator
 			changeSignaler.OnInjestEventChanged += OnChanged;
 		}
 
+		protected override async Task CheckExisting(EventDbContext db, InjestDbContext injestDb)
+		{
+			foreach(var injestEvent in injestDb.Events)
+			{
+				await Process(db, injestEvent, injestEvent.EventId, 0);
+			}
+		}
+
 		protected override async Task Process(EventDbContext db, DbInjestEvent @event, int id, int parentId)
 		{
 			// TODO : Allow for override of existingEvent.Name

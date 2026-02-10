@@ -33,6 +33,13 @@ namespace FPVPulse.LocalHost.Generator
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
 
+			{
+				using var init = serviceProvider.CreateScope();
+				var injest = init.ServiceProvider.GetRequiredService<InjestDbContext>();
+
+				await CheckExisting(db, injest);
+			}
+
 			while (!stoppingToken.IsCancellationRequested)
 			{
 #if !DEBUG
@@ -57,6 +64,7 @@ namespace FPVPulse.LocalHost.Generator
 
 		public abstract void Bind(ChangeSignaler changeSignaler);
 
+		protected abstract Task CheckExisting(EventDbContext db, InjestDbContext injestDb);
 		protected abstract Task Process(EventDbContext db, T data, int id, int parentId);
 	}
 }

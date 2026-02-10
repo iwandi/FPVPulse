@@ -7,6 +7,7 @@ using System.Collections.Concurrent;
 using FPVPulse.LocalHost.Client.Components.Data;
 using Microsoft.AspNetCore.Mvc;
 using System.Diagnostics.CodeAnalysis;
+using FPVPulse.LocalHost.Injest;
 
 namespace FPVPulse.LocalHost.Generator
 {
@@ -19,6 +20,16 @@ namespace FPVPulse.LocalHost.Generator
 		public override void Bind(ChangeSignaler changeSignaler)
 		{
 			changeSignaler.OnInjestRaceChanged += OnChanged;
+		}
+
+		protected override async Task CheckExisting(EventDbContext db, InjestDbContext injestDb)
+		{
+			foreach (var race in injestDb.Races)
+			{
+				InjestData.FillPilots(injestDb, race);
+
+				await Process(db, race, race.RaceId, race.EventId.Value);
+			}
 		}
 
 		protected override async Task Process(EventDbContext db, DbInjestRace data, int id, int parentId)

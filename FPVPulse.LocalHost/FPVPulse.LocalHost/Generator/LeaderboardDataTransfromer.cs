@@ -1,6 +1,7 @@
 ﻿using FPVPulse.Ingest;
 using FPVPulse.LocalHost.Client;
 using FPVPulse.LocalHost.Client.Components.Data;
+using FPVPulse.LocalHost.Injest;
 using FPVPulse.LocalHost.Injest.Db;
 using FPVPulse.LocalHost.Signal;
 using Microsoft.EntityFrameworkCore;
@@ -16,6 +17,16 @@ namespace FPVPulse.LocalHost.Generator
 		public override void Bind(ChangeSignaler changeSignaler)
 		{
 			changeSignaler.OnInjestLeaderboardChanged += OnChanged;
+		}
+
+		protected override async Task CheckExisting(EventDbContext db, InjestDbContext injestDb)
+		{
+			foreach (var leaderboard in injestDb.Leaderboard)
+			{
+				InjestData.FillResult(injestDb, leaderboard);
+
+				await Process(db, leaderboard, leaderboard.LeaderboardId, 0);
+			}
 		}
 
 		protected override async Task Process(EventDbContext db, DbInjestLeaderboard data, int id, int parentId)

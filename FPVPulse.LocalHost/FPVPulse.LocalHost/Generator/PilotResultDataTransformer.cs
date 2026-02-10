@@ -19,6 +19,13 @@ namespace FPVPulse.LocalHost.Generator
 			changeSignaler.OnInjestPilotResultChanged += OnChanged;
 		}
 
+		protected override async Task CheckExisting(EventDbContext db, InjestDbContext injestDb)
+		{
+			foreach (var result in injestDb.PilotResults)
+			{
+				await Process(db, result, result.PilotResultId, result.RaceId.Value);
+			}
+		}
 		protected override async Task Process(EventDbContext db, DbInjestPilotResult data, int id, int parentId)
 		{
 			var getRacePilotId = db.RacePilots.Where(e => e.InjestRacePilotId == parentId).Select(e => new { e.RaceId, e.PilotId }).FirstOrDefaultAsync();
