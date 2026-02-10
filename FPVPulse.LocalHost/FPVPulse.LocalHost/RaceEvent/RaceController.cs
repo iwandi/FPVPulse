@@ -1,4 +1,5 @@
-﻿using FPVPulse.LocalHost.Client;
+﻿using FPVPulse.Ingest;
+using FPVPulse.LocalHost.Client;
 using FPVPulse.LocalHost.Client.Components.Data;
 using FPVPulse.LocalHost.Injest.Db;
 using Microsoft.AspNetCore.Http;
@@ -41,7 +42,15 @@ namespace FPVPulse.LocalHost.RaceEvent
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
 
-			return db.Races.Where(e => e.EventId == eventId).Select(e => new IndexEntry
+			return db.Races.Where(e => e.EventId == eventId)
+				.OrderBy(e =>
+					e.RaceType == RaceType.Practice ? 0 :
+					e.RaceType == RaceType.Qualifying ? 1 :
+					e.RaceType == RaceType.Mains ? 2 :
+					e.RaceType == RaceType.Unknown ? 3 : 99)
+				.ThenBy(e => e.SecondOrderPosition)
+				.ThenBy(e => e.SecondOrderPosition)
+				.Select(e => new IndexEntry
 			{
 				Id = e.RaceId,
 				Name = e.Name,
