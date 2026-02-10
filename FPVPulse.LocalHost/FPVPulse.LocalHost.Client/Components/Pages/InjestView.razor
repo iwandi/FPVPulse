@@ -126,10 +126,22 @@ else
 		}
 	}
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && OperatingSystem.IsBrowser())
+			await LoadRaceAsync();
+
+		if (pastScollTo != scollTo)
+		{
+			pastScollTo = scollTo;
+			await JS.InvokeVoidAsync("scrollToElementById", scollTo);
+		}
+	}
+
+	private async Task LoadRaceAsync()
 	{
 		var index = await Http.GetFromJsonAsync<IndexEntry[]>("api/injest/inspect/eventIndex/");
-		if(UpdateEventListByIndex(index))
+		if (UpdateEventListByIndex(index))
 		{
 			await LoadRacesAsync();
 			StateHasChanged();
@@ -368,16 +380,6 @@ else
 				leaderboards[raceType] = leaderboard;
 			else if (leaderboards.ContainsKey(raceType))
 				leaderboards.Remove(raceType);
-		}
-	}
-
-	protected override async Task OnAfterRenderAsync(bool firstRender)
-	{
-		//await JS.InvokeVoidAsync("console.log", "OnAfterRenderAsync", firstRender, scollTo, pastScollTo);
-		if (pastScollTo != scollTo)
-		{
-			pastScollTo = scollTo;
-			await JS.InvokeVoidAsync("scrollToElementById", scollTo);
 		}
 	}
 }

@@ -36,3 +36,21 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+
+.race-complited-container {
+    display: flex;
+    flex-wrap: wrap;
+}
+
+.race-complited-container div {
+    border: 1px solid gray;
+    margin: 2px;
+    padding: 5px;
+    border-radius: 8px;
+    background-color: lightgray;
+}
+
+.break-flex {
+    flex-basis: 100%;
+    width: 100%;
+}

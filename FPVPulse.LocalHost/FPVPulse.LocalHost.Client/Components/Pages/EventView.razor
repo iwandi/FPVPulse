@@ -2,7 +2,9 @@
 @rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@using FPVPulse.Ingest
 @using FPVPulse.LocalHost.Client.Components.Data
+@using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h3>EventView</h3>
@@ -15,23 +17,68 @@
 		</div>
 		<a href="/event/@eventId/leaderboards">EventLeaderboards</a><br />
 		<a href="/event/@eventId/pilots">EventPilots</a><br />
-		<h5 class="card-title">Races</h5><br />
-		@foreach (var race in raceIndex)
-		{
-			<a href="/race/@race.Id">@race.Name : @race.Id</a><br />
-		}
 		<h5 class="card-title">Pilots</h5>
-		@foreach (var pilot in pilotIndex)
+		<div class="race-complited-container">
+		@foreach (var pilot in pilots.Values)
 		{
-			<a href="/event/@eventId/pilot/@pilot.Id">@pilot.Name : @pilot.Id</a><br />
+			<div><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></div>
 		}
-		<h5 class="card-title">Leaderboards</h5>
-		@foreach (var leaerboard in leaderboarIndex)
+		</div>
+		<h5 class="card-title">Races</h5><br />
+		@if (eventData.Races != null && eventData.Races.Length > 0)
 		{
-			<a href="/leaderboard/@leaerboard.Id">@leaerboard.Name : @leaerboard.Id</a><br />
+			var lastRaceType = RaceType.Unknown;
+			var lastBracket = -1;
+			@foreach (var raceGroupRaceType in eventData.Races.OrderBy(e =>
+						e.RaceType == RaceType.Practice ? 0 :
+						e.RaceType == RaceType.Qualifying ? 1 :
+						e.RaceType == RaceType.Mains ? 2 :
+						e.RaceType == RaceType.Unknown ? 3 : 99)
+						.GroupBy(e => e.RaceType))
+			{
+				<h4>@raceGroupRaceType.Key</h4>
+				if (leaderboards.TryGetValue(raceGroupRaceType.Key, out var leaerboard))
+				{
+					<a href="/leaderboard/@leaerboard.LeaderboardId">Leaderboard</a>					
+				}
+				@foreach (var brackedGroup in raceGroupRaceType.GroupBy(e => e.FirstOrderPoistion))
+				{
+					<h4>@brackedGroup.Key</h4>
+					<hr>
+					<div class="race-complited-container">
+
+						@foreach (var race in brackedGroup.OrderBy(e => e.SecondOrderPosition))
+						{
+							@if (IsCurrentRace(race))
+							{
+								<div class="break-flex">
+									<h3>Current Race</h3>
+									<RaceDetailsView race="@race" />
+								</div>
+							}
+							else if (IsNextRace(race))
+							{
+								<div class="break-flex">
+									<h3>Next Race</h3>
+									<RaceDetailsView race="@race" />	
+								</div>
+							}
+							else if (IsComplied(race))
+							{
+								<RaceComplitedView race="@race" />
+							}
+							else
+							{
+								<div class="break-flex">
+									<RaceDetailsView race="@race" />									
+								</div>
+							}
+						}
+					</div>
+				}
+			}
 		}
 	</div>
-	<code>@Newtonsoft.Json.JsonConvert.SerializeObject(eventData, Formatting.Indented)</code>
 }
 else
 {
@@ -44,9 +91,8 @@ else
 
 	Event eventData;
 
-	IndexEntry[] raceIndex;
-	IndexEntry[] pilotIndex;
-	IndexEntry[] leaderboarIndex;
+	Dictionary<int, Pilot> pilots = new Dictionary<int, Pilot>();
+	Dictionary<RaceType, Leaderboard> leaderboards = new Dictionary<RaceType, Leaderboard>();
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -57,10 +103,76 @@ else
 	private async Task LoadRaceAsync()
 	{
 		eventData = await Http.GetFromJsonAsync<Event>($"api/event/{eventId}");
-		raceIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/raceIndex");
-		pilotIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/pilotIndex");
-		leaderboarIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/leaderboardIndex");
+
+		await LoadRaces();
+		await LoadPilots();
+		await LoadLeaderboards();
+
+		JS.InvokeVoidAsync("console.log", "OnChangeRaceData", eventData.Shedule);
 
 		StateHasChanged();
+	}
+
+	async Task LoadRaces()
+	{
+		if (eventData.Races == null)
+		{
+			var raceList = new List<Race>();
+			var raceIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/raceIndex");
+			foreach (var entry in raceIndex)
+			{
+				var race = await Http.GetFromJsonAsync<Race>($"api/race/{entry.Id}");
+				if (race != null)
+					raceList.Add(race);
+			}
+			eventData.Races = raceList.ToArray();
+		}
+	}
+
+	async Task LoadPilots()
+	{
+		var pilotIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/pilotIndex");
+		if (pilotIndex != null && pilotIndex.Length > 0)
+		{
+			foreach (var entry in pilotIndex)
+			{
+				var pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{entry.Id}");
+				if (pilot != null)
+					pilots[entry.Id] = pilot;
+			}
+		}
+	}
+
+	async Task LoadLeaderboards()
+	{
+		var leaderboarIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/leaderboardIndex");
+		if (leaderboarIndex != null && leaderboarIndex.Length > 0)
+		{
+			foreach (var entry in leaderboarIndex)
+			{
+				var leaderboard = await Http.GetFromJsonAsync<Leaderboard>($"api/leaderboard/{entry.Id}");
+				if (leaderboard != null)
+					leaderboards[leaderboard.RaceType] = leaderboard;
+			}
+		}
+	}
+
+	bool IsComplied(Race race)
+	{
+		if(race != null && race.Results != null)
+		{
+			return race.Results.All(r => r.IsComplited ?? false);
+		}
+		return false;	
+	}
+
+	bool IsCurrentRace(Race race)
+	{
+		return eventData?.Shedule?.CurrentRaceId == race.RaceId;
+	}
+
+	bool IsNextRace(Race race)
+	{
+		return eventData?.Shedule?.NextRaceId == race.RaceId;		
 	}
 }

@@ -6,11 +6,15 @@
 @using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
 @inject IJSRuntime JS
+
 <h3>RaceView</h3>
 
 @if (race != null)
 {
-	@*<code>@Newtonsoft.Json.JsonConvert.SerializeObject(race, Formatting.Indented)</code>*@
+	<a href="/event/@race?.EventId">Back to Event</a>
+	<hr>
+
+	 @*<code>@Newtonsoft.Json.JsonConvert.SerializeObject(race, Formatting.Indented)</code>*@
 	<RaceDetailsView race="@race" />
 }
 else

@@ -1,0 +1,111 @@
+﻿@rendermode InteractiveWebAssembly
+@using FPVPulse.Ingest
+@using FPVPulse.LocalHost.Client.Components.Data;
+
+@if (race != null && race.Pilots != null)
+{
+	@Prepare();
+	<table>
+		<tr>
+			<th>Pilot</th>
+			<th>Nationality</th>
+			<th>Seed Postion</th>
+			<th>Start Position</th>
+			<th>Position</th>
+			<th>Channel</th>
+			@if (hasResults)
+			{
+				@if (isInProgress)
+				{
+					<th>CurrentSector</th>
+					<th>CurrentSplit</th>
+				}
+				<th>LapCount</th>
+				<th>TotalTime</th>
+				<th>TopLapTime</th>
+				<th>Top2ConsecutiveLapTime</th>
+				<th>Top3ConsecutiveLapTime</th>
+				<th>AverageLapTime</th>
+				<th>Flags</th>
+				@for (int i = 1; i <= lapCount; i++)
+				{
+					<th>Lap @i</th>
+				}
+			}
+		</tr>
+		@foreach (var racePilot in race.Pilots)
+		{
+			var result = race.Results.Where(e => e.LazyRacePilotId == racePilot.PilotId).FirstOrDefault();
+			<tr>
+				<td><a href="event/@race.EventId/pilot/@racePilot.PilotId">@racePilot.Pilot?.DisplayName</a></td>
+				<td>@racePilot.Pilot?.CountryAlpha3</td>
+				<td><a href="race/@racePilot.SeedRaceId">@racePilot.SeedPosition</a></td>
+				<td>@racePilot.StartPosition</td>
+				<td>@racePilot.Position</td>
+				<td>@racePilot.Channel</td>
+				@if (hasResults)
+				{
+					@if (isInProgress)
+					{
+						<td>@result?.CurrentSector</td>
+						<td>@result?.CurrentSplit</td>
+					}
+					<td>@result?.LapCount</td>
+					<td>@result?.TotalTime</td>
+					<td>@result?.TopLapTime</td>
+					<td>@result?.Top2ConsecutiveLapTime</td>
+					<td>@result?.Top3ConsecutiveLapTime</td>
+					<td>@result?.AverageLapTime</td>
+					<td>@PrintFlags(result)</td>
+					@for (int i = 0; i < lapCount; i++)
+					{
+						<td>@PrintLap(result, i)</td>
+					}
+				}
+			</tr>
+		}
+	</table>
+}
+
+@code {
+	[Parameter]
+	public Race? race { get; set; }
+
+	bool isInProgress;
+
+	bool hasResults;
+
+	int lapCount;
+
+	string Prepare()
+	{
+		hasResults = race.Results != null && race.Results.Length > 0;
+		if (hasResults)
+		{
+			lapCount = race.Results.Select(e => e.LapCount).Max() ?? 0;
+		}
+
+		isInProgress = false; // TODO : detect this
+
+
+		return string.Empty;
+	}
+
+	string PrintFlags(RacePilotResult? result)
+	{
+		if (result == null || result.Flags == null || result.Flags == ResultFlag.None)
+		{
+			return string.Empty;
+		}
+		return result.Flags.ToString();
+	}
+
+	string PrintLap(RacePilotResult? result, int lapIndex)
+	{
+		if (result == null || result.Laps == null || lapIndex >= result.Laps.Length)
+		{
+			return string.Empty;
+		}
+		return result.Laps[lapIndex].LapTime.ToString();
+	}
+}
