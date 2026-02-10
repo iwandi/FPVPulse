@@ -41,9 +41,9 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 
 	public class Lap
 	{
-		public int LapNumber;
-		public float? LapTime;
+		public int LapNumber { get; set; }
+		public float? LapTime { get; set; }
 
-		public bool? IsInvalid;
+		public bool? IsInvalid { get; set; }
 	}
 }
