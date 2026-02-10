@@ -29,7 +29,13 @@ else
 	public string? raceTypeStr { get; set; }
 	List<Leaderboard> leaderboards = new List<Leaderboard>();
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && OperatingSystem.IsBrowser())
+			await LoadRaceAsync();
+	}
+
+	private async Task LoadRaceAsync()
 	{
 		if (!Enum.TryParse<RaceType>(raceTypeStr, out var raceType))
 			raceType = RaceType.Unknown;

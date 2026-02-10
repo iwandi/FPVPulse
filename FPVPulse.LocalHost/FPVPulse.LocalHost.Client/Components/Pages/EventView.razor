@@ -48,7 +48,13 @@ else
 	IndexEntry[] pilotIndex;
 	IndexEntry[] leaderboarIndex;
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && OperatingSystem.IsBrowser())
+			await LoadRaceAsync();
+	}
+
+	private async Task LoadRaceAsync()
 	{
 		eventData = await Http.GetFromJsonAsync<Event>($"api/event/{eventId}");
 		raceIndex = await Http.GetFromJsonAsync<IndexEntry[]>($"api/event/{eventId}/raceIndex");

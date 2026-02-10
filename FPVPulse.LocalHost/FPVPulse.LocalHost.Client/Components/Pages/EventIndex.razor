@@ -22,7 +22,13 @@ else
 @code {
 	IndexEntry[] index;
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && OperatingSystem.IsBrowser())
+			await LoadRaceAsync();
+	}
+
+	private async Task LoadRaceAsync()
 	{
 		index = await Http.GetFromJsonAsync<IndexEntry[]>("api/eventIndex/");
 		StateHasChanged();

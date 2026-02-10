@@ -20,15 +20,20 @@ else
 
 
 @code {
-    [Parameter]
+	[Parameter]
 	public int raceId { get; set; }
 
 	Race race;
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && OperatingSystem.IsBrowser())
+			await LoadRaceAsync();
+	}
+
+	private async Task LoadRaceAsync()
 	{
 		race = await Http.GetFromJsonAsync<Race>($"api/race/{raceId}");
-
 		StateHasChanged();
 	}
 }

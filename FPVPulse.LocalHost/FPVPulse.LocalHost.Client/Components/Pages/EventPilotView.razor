@@ -24,10 +24,15 @@ else
 
 	Pilot pilot;
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && OperatingSystem.IsBrowser())
+			await LoadRaceAsync();
+	}
+
+	private async Task LoadRaceAsync()
 	{
 		pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{pilotId}");
-
 		StateHasChanged();
 	}
 }

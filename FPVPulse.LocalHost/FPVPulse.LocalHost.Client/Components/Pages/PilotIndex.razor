@@ -27,7 +27,13 @@ else
 	IndexEntry[] index;
 	Dictionary<int, Pilot> pilots = new Dictionary<int, Pilot>();
 
-	protected override async Task OnInitializedAsync()
+	protected override async Task OnAfterRenderAsync(bool firstRender)
+	{
+		if (firstRender && OperatingSystem.IsBrowser())
+			await LoadRaceAsync();
+	}
+
+	private async Task LoadRaceAsync()
 	{
 		index = await Http.GetFromJsonAsync<IndexEntry[]>($"api/pilotIndex");
 		foreach (var entry in index)
@@ -35,8 +41,6 @@ else
 			var pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{entry.Id}");
 			pilots[entry.Id] = pilot;
 		}
-
 		StateHasChanged();
 	}
-
 }
