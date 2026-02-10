@@ -32,7 +32,7 @@ namespace FPVPulse.LocalHost.Injest.Db
             NextRaceSheduledStartTime = @event.NextRaceSheduledStartTime;
         }
 
-        public bool Merge(InjestEvent @event)
+        public bool Merge(InjestEvent @event, int? currentRaceId, int? nextRaceId)
         {
             bool changed = false;
             if (@event.InjestName != null && !string.IsNullOrWhiteSpace(@event.InjestName) && InjestName != @event.InjestName)
@@ -82,6 +82,9 @@ namespace FPVPulse.LocalHost.Injest.Db
                 NextInjestRaceId = null;
                 changed = true;
 			}
+
+			CurrentRaceId = currentRaceId;
+			NextRaceId = nextRaceId;
 			return changed;
         }
     }

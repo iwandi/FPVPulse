@@ -48,14 +48,19 @@ namespace FPVPulse.LocalHost.Injest
         {
             var existing = await db.Events.FirstOrDefaultAsync(e => e.InjestId == injestId &&
                 e.InjestEventId == @event.InjestEventId);
-            if (existing == null)
+
+            var currentRaceId = await db.Races.Where( e => e.InjestRaceId == @event.CurrentInjestRaceId).Select(e => e.RaceId).FirstOrDefaultAsync();
+            var nextRaceId = await db.Races.Where( e => e.InjestRaceId == @event.NextInjestRaceId).Select(e => e.RaceId).FirstOrDefaultAsync();
+
+			if (existing == null)
             {
                 existing = new DbInjestEvent(injestId, @event);
-                db.Events.Add(existing);
+                existing.Merge(@event, currentRaceId, nextRaceId);
+				db.Events.Add(existing);
             }
             else
             {
-                if (!existing.Merge(@event))
+                if (!existing.Merge(@event, currentRaceId, nextRaceId))
                     return;
             }
 
