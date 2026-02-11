@@ -17,6 +17,20 @@ window.scrollToElementById = function(id) {
     var el = document.getElementById(id);
     if (el) el.scrollIntoView({ behavior: 'smooth', block: 'center' });
 }
+function copyAllHeights() {
+    console.log("copyAllHeights");
+    document.querySelectorAll('.race-type-container').forEach(function(container) {
+        var source = container.querySelector('.brackets-container');
+        var limit = container.querySelector('.leaderboard-narrow-container');
+        var target = container.querySelector('.leaderboard-float-right');
+        if (source && limit && target) {
+			var height = Math.min(source.offsetHeight, limit.offsetHeight + 24);
+            target.style.height = height + "px";
+            console.log("Set height", target, "to", source.offsetHeight);
+        }
+    });
+}
+window.addEventListener('resize', copyAllHeights);
     </script>
 </head>
 
