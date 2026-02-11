@@ -26,11 +26,14 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach(var injestEvent in injestDb.Events)
 			{
-				await Process(db, injestEvent, injestEvent.EventId, 0);
+				while(!await Process(db, injestEvent, injestEvent.EventId, 0))
+				{
+
+				}
 			}
 		}
 
-		protected override async Task Process(EventDbContext db, DbInjestEvent @event, int id, int parentId)
+		protected override async Task<bool> Process(EventDbContext db, DbInjestEvent @event, int id, int parentId)
 		{
 			// TODO : Allow for override of existingEvent.Name
 
@@ -70,6 +73,8 @@ namespace FPVPulse.LocalHost.Generator
 				await changeSignaler.SignalChangeAsync(ChangeGroup.Event, existingEvent.EventId, 0, existingEvent);
 			if (sheduleHasChange)
 				await changeSignaler.SignalChangeAsync(ChangeGroup.EventShedule, eventShedule.EventSheduleId, eventShedule.EventId, eventShedule);
+
+			return true;
 		}
 
 		void WriteData(Event @event, InjestEvent injestEvent)

@@ -48,7 +48,10 @@ namespace FPVPulse.LocalHost.Generator
 				{
 					if (queue.TryDequeue(out var @event))
 					{
-						await Process(db, @event.Data, @event.Id, @event.ParentId);
+						while(!await Process(db, @event.Data, @event.Id, @event.ParentId))
+						{
+
+						}
 					}
 
 					await signal.WaitAsync(stoppingToken);
@@ -65,6 +68,6 @@ namespace FPVPulse.LocalHost.Generator
 		public abstract void Bind(ChangeSignaler changeSignaler);
 
 		protected abstract Task CheckExisting(EventDbContext db, InjestDbContext injestDb);
-		protected abstract Task Process(EventDbContext db, T data, int id, int parentId);
+		protected abstract Task<bool> Process(EventDbContext db, T data, int id, int parentId);
 	}
 }

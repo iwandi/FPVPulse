@@ -23,19 +23,25 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach (var result in injestDb.PilotResults)
 			{
-				await Process(db, result, result.PilotResultId, result.RaceId.Value);
+				while(!await Process(db, result, result.PilotResultId, result.RaceId.Value))
+				{
+
+				}
 			}
 		}
 
-		protected override async Task Process(EventDbContext db, DbInjestPilotResult data, int id, int parentId)
+		protected override async Task<bool> Process(EventDbContext db, DbInjestPilotResult data, int id, int parentId)
 		{
-			var getRacePilotId = db.RacePilots.Where(e => e.RacePilotId == id).Select(e => new { e.RaceId, e.PilotId }).FirstOrDefaultAsync();
+			var getRacePilotId = db.RacePilots.Where(e => e.InjestRacePilotId == id).Select(e => new { e.RaceId, e.PilotId }).FirstOrDefaultAsync();
 			var getExistingPilot = db.RacePilotResults.Where(pr => pr.InjestPilotResultId == id).FirstOrDefaultAsync();
 
 			await Task.WhenAll(getRacePilotId, getExistingPilot);
 
 			var racePilotResult = getRacePilotId.Result;
 			var existingPilotResult = getExistingPilot.Result;
+
+			if(racePilotResult == null)
+				return false;
 
 			if (existingPilotResult == null)
 			{
@@ -84,6 +90,7 @@ namespace FPVPulse.LocalHost.Generator
 
 			if(raceHasChanges)
 				await changeSignaler.SignalChangeAsync(ChangeGroup.RacePilotResult, existingPilotResult.RacePilotResultId, existingPilotResult.LazyRacePilotId ?? -1, existingPilotResult);
+			return true;
 		}
 
 		void WriteData(RacePilotResult racePilotResult, DbInjestPilotResult injestPilotResult, int? raceId, int? pilotId)

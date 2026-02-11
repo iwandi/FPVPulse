@@ -38,7 +38,9 @@ namespace FPVPulse.LocalHost
 
                 builder.Services.AddHostedService<EventDataTransformer>();
                 builder.Services.AddHostedService<LeaderboardDataTransfromer>();
-                builder.Services.AddHostedService<RaceDataTransformer>();
+				builder.Services.AddHostedService<LeaderboardPilotDataTransformer>();
+				builder.Services.AddHostedService<RaceDataTransformer>();
+				builder.Services.AddHostedService<RacePilotDataTransformer>();
 				builder.Services.AddHostedService<PilotResultDataTransformer>();
 
 				builder.Services.AddHttpContextAccessor();

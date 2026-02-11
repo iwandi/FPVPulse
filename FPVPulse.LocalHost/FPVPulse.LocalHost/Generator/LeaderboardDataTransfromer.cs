@@ -23,15 +23,22 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach (var leaderboard in injestDb.Leaderboard)
 			{
-				InjestData.FillResult(injestDb, leaderboard);
+				//InjestData.FillResult(injestDb, leaderboard);
 
-				await Process(db, leaderboard, leaderboard.LeaderboardId, 0);
+				while(!await Process(db, leaderboard, leaderboard.LeaderboardId, leaderboard.EventId.Value))
+				{
+
+				}
 			}
 		}
 
-		protected override async Task Process(EventDbContext db, DbInjestLeaderboard data, int id, int parentId)
+		protected override async Task<bool> Process(EventDbContext db, DbInjestLeaderboard data, int id, int parentId)
 		{
 			var @event = await db.Events.Where(e => e.InjestEventId == parentId).FirstOrDefaultAsync();
+
+			if(@event == null)
+				return false;
+
 			var existingLeaderboard = await db.Leaderboards.Where(l => l.InjestLeaderboardId == id).FirstOrDefaultAsync();
 
 			if (existingLeaderboard == null)
@@ -45,66 +52,17 @@ namespace FPVPulse.LocalHost.Generator
 
 			var leaderboardHasChange = await db.SaveChangesAsync() > 0;
 
-			List<Pilot> changedPilot = new List<Pilot>();
-			List<LeaderboardPilot> pilots = new List<LeaderboardPilot>();
-			List<LeaderboardPilot> changedLeaderboardPilot = new List<LeaderboardPilot>();
-			if (data.Results != null && data.Results.Length > 0)
-			{
-				foreach (var injestResult in data.Results)
-				{
-					var dataPilot = injestResult as DbInjestLeaderboardPilot;
-					if (dataPilot == null)
-						throw new Exception("Unexpected type DbInjestLeaderboard contains non DbInjestLeaderboardPilot in Results");
-
-					var injestPilotId = dataPilot.InjestPilotId;
-					var (existingPilot, pilotHasChanged) = await db.MatchPilot(injestPilotId, dataPilot.InjestName);
-
-					var leaderboardPilotInjestId = dataPilot.LeaderboardPilotId;
-					var existingLeaderboardPilot = await db.LeaderboardPilots.Where(lp => lp.InjestLeaderboardPilotId == leaderboardPilotInjestId).FirstOrDefaultAsync();
-					if (existingLeaderboardPilot == null)
-					{
-						existingLeaderboardPilot = new LeaderboardPilot { LeaderboardId = existingLeaderboard.LeaderboardId, InjestLeaderboardPilotId = leaderboardPilotInjestId, PilotId = existingPilot.PilotId };
-						WriteData(existingLeaderboardPilot, dataPilot, existingPilot.PilotId, parentId);
-						db.LeaderboardPilots.Add(existingLeaderboardPilot);
-					}
-					else
-						WriteData(existingLeaderboardPilot, dataPilot, existingPilot.PilotId, parentId);
-
-					var leaderboardPilotHasChanges = await db.SaveChangesAsync() > 0;
-
-					existingLeaderboardPilot.Pilot = existingPilot;
-					pilots.Add(existingLeaderboardPilot);
-
-					if (pilotHasChanged)
-						changedPilot.Add(existingPilot);
-					if (leaderboardPilotHasChanges)
-						changedLeaderboardPilot.Add(existingLeaderboardPilot);
-				}
-			}
-
-			existingLeaderboard.Pilots = pilots.ToArray();
+			// TODO : fill result 
 
 			if(leaderboardHasChange)
 				await changeSignaler.SignalChangeAsync(ChangeGroup.Leaderboard, existingLeaderboard.LeaderboardId, 0, existingLeaderboard);
-			foreach(var pilot in changedPilot)
-				await changeSignaler.SignalChangeAsync(ChangeGroup.Pilot, pilot.PilotId, 0, pilot);
-			foreach (var leaderboardPilot in changedLeaderboardPilot)
-				await changeSignaler.SignalChangeAsync(ChangeGroup.LeaderboardPilot, leaderboardPilot.LeaderboardPilotId, leaderboardPilot.LeaderboardId, leaderboardPilot);
+
+			return true;
 		}
 
 		void WriteData(Leaderboard leaderboard, DbInjestLeaderboard injestLeaderboard)
 		{
 			leaderboard.RaceType = injestLeaderboard.RaceType ?? RaceType.Unknown;
-		}
-
-		void WriteData(LeaderboardPilot leaderboardPilot, DbInjestLeaderboardPilot injestLeaderboardPilot, int pilotId, int positionReasonRaceId)
-		{
-			leaderboardPilot.PilotId = pilotId;
-			leaderboardPilot.Position = injestLeaderboardPilot.Position;
-			leaderboardPilot.PositionDelta = injestLeaderboardPilot.PositionDelta;
-			leaderboardPilot.PositionReason = injestLeaderboardPilot.PositionReason;
-			leaderboardPilot.PositionReasonRaceId = positionReasonRaceId;
-			leaderboardPilot.Flags = injestLeaderboardPilot.Flags;
 		}
 	}
 }
