@@ -1,0 +1,33 @@
+﻿@rendermode InteractiveWebAssembly
+@using FPVPulse.Ingest
+@using FPVPulse.LocalHost.Client.Components.Data;
+
+@if(pilot != null)
+{
+	@if(linkToPilot)
+	{
+		<h3><a href="/pilot/@pilot.PilotId">@pilot.DisplayName</a></h3>
+	}
+	else
+	{
+		<h3>@pilot.DisplayName</h3>
+	}
+	<ol>
+		<li>First Name: @pilot.FirstName</li>
+		<li>Last Name: @pilot.LastName</li>
+		<li>Nick Name: @pilot.NickName</li>
+		<li>Nationality: @pilot.Nationality</li>
+		<li>Country Alpha 2 Letter: @pilot.CountryAlpha2</li>
+		<li>CountryAlpha 3 Letter: @pilot.CountryAlpha3</li>
+		<li>Language: @pilot.Language</li>
+		<li>Locale: @pilot.Locale</li>
+	</ol>
+}
+
+@code {
+	[Parameter]
+	public Pilot? pilot { get; set; }
+
+	[Parameter]
+	public bool linkToPilot { get; set; } = false;
+}

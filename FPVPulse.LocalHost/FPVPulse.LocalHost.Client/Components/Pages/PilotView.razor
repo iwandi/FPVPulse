@@ -3,13 +3,22 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
+@using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h3>PilotView</h3>
 
 @if(pilot != null)
 {
-	<code>@Newtonsoft.Json.JsonConvert.SerializeObject(pilot, Formatting.Indented)</code>
+	<a href="/pilots">Back to Pilots</a>
+	<h4>Events</h4>
+	<div class="race-complited-container">
+	@foreach (var entry in events)
+	{
+			<div class="float-element"><a href="/event/@entry.Id">@entry.Name</a></div>
+	}
+	</div>
+	<PilotDetailView pilot=pilot />
 }
 else
 {
@@ -22,6 +31,8 @@ else
 
 	Pilot pilot;
 
+	IndexEntry[] events;
+
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender && OperatingSystem.IsBrowser())
@@ -31,6 +42,9 @@ else
 	private async Task LoadRaceAsync()
 	{
 		pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{pilotId}");
+
+		events = await Http.GetFromJsonAsync<IndexEntry[]>($"api/pilot/{pilotId}/eventIndex");
+
 		StateHasChanged();
 	}
 }

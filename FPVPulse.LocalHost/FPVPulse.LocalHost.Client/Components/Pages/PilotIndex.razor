@@ -9,14 +9,20 @@
 
 @if (index != null && pilots != null)
 {
+	<h5 class="card-title">Pilots</h5>
+	<div class="race-complited-container">
 	@foreach (var entry in index)
 	{
-		<a href="/pilot/@entry.Id">@entry.Name</a> <br />
 		if (pilots.TryGetValue(@entry.Id, out var pilot))
 		{
-			<code>@JsonConvert.SerializeObject(pilot, Formatting.Indented)</code>			
+			<div class="float-element"><a href="/pilot/@pilot.PilotId">@pilot.DisplayName</a></div>
+		}
+		else
+		{
+			<div class="float-element"><a href="/pilot/@entry.Id">@entry.Name</a></div>
 		}
 	}
+	</div>
 }
 else
 {

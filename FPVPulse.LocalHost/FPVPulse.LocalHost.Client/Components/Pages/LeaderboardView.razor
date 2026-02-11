@@ -2,14 +2,17 @@
 @rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@using FPVPulse.Ingest
 @using FPVPulse.LocalHost.Client.Components.Data
+@using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h3>Leaderboard</h3>
 
 @if (leaderboard != null)
 {
-	<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard, Formatting.Indented)</code>
+	<a href="/event/@leaderboard.EventId">Back to Event</a>
+	<LeaderboardDetailsView leaderboard="leaderboard" races="races"/>
 }
 else
 {
@@ -21,16 +24,39 @@ else
 	public int leaderboardId { get; set; }
 
 	Leaderboard leaderboard;
+	Race[] races;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender && OperatingSystem.IsBrowser())
-			await LoadRaceAsync();
+			await LoadLeaderboard();
 	}
 
-	private async Task LoadRaceAsync()
+	private async Task LoadLeaderboard()
 	{
 		leaderboard = await Http.GetFromJsonAsync<Leaderboard>($"api/leaderboard/{leaderboardId}");
+
+		if (leaderboard != null)
+			races = await SaveLoadRaces(leaderboard.LeaderboardId, leaderboard.RaceType);
+		else
+			races = null;
+
 		StateHasChanged();
+	}
+
+	async Task<Race[]> SaveLoadRaces(int eventId, RaceType raceType)
+	{
+		try
+		{
+			var races = await Http.GetFromJsonAsync<Race[]>($"api/event/{eventId}/leaderboardResults/{raceType}");
+			return races;
+		}
+		catch (Exception ex)
+		{
+			var httpEx = ex as System.Net.Http.HttpRequestException;
+			if (httpEx != null && httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+				return null;
+			throw ex;
+		}
 	}
 }

@@ -12,7 +12,14 @@
 				<tr>
 					<th>Pilot</th>
 					<th>Nationality</th>
-					<th>Position</th>
+					@if(race.RaceType == RaceType.Mains)
+					{
+						<th>Position</th>
+					}
+					else
+					{
+						<th>Time</th>
+					}
 				</tr>
 				@foreach (var racePilot in race.Pilots)
 				{
@@ -20,7 +27,14 @@
 					<tr>
 						<td><a href="event/@race.EventId/pilot/@racePilot.PilotId">@racePilot.Pilot?.DisplayName</a></td>
 						<td>@racePilot.Pilot?.CountryAlpha3</td>
-						<td>@racePilot.Position</td>
+						@if (race.RaceType == RaceType.Mains)
+						{
+							<td>@racePilot.Position</td>
+						}
+						else
+						{
+							<th>@DataUtil.GetTime(race, racePilot)</th>
+						}
 					</tr>
 				}
 			</table>

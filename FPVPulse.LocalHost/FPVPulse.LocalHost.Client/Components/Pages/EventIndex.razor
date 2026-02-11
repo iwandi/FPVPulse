@@ -8,14 +8,16 @@
 
 @if (index != null)
 {
+	<div class="race-complited-container">
 	@foreach (var entry in index)
 	{
-		<a href="/event/@entry.Id">@entry.Name : @entry.Id</a>
+		<div class="float-element"><a href="/event/@entry.Id">@entry.Name</a></div>
 	}
+	</div>
 }
 else
 {
-		<p>Loading...</p>
+	<p>Loading...</p>
 }
 
 

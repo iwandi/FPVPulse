@@ -6,8 +6,15 @@
 {
 	@Prepare();
 	<div>
-		<h3>@race.Name</h3>
-		<p>RaceType: @race.RaceType</p>
+		@if (linkToRace)
+		{
+			<h3><a href="race/@race.RaceId">@race.Name</a></h3>
+		}
+		else
+		{
+			<h3>@race.Name</h3>
+			<p>RaceType: @race.RaceType</p>
+		}
 		<hr />
 		@if (race.Pilots != null)
 		{
@@ -19,6 +26,8 @@
 @code {
 	[Parameter]
 	public Race? race { get; set; }
+	[Parameter]
+	public bool linkToRace { get; set; } = false;
 
 	string Prepare()
 	{

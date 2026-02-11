@@ -1,0 +1,29 @@
+﻿@rendermode InteractiveWebAssembly
+@using FPVPulse.Ingest
+@using FPVPulse.LocalHost.Client.Components.Data;
+
+@if (leaderboard != null)
+{
+	<table>
+		<tr>
+			<th>Position</th>
+			<th>Pilot</th>
+			<th>Nation</th>
+			<th>Reason</th>
+		</tr>
+		@foreach (var pilot in leaderboard.Pilots)
+		{
+			<tr>
+				<td>@DataUtil.GetPilotPosition(@pilot)</td>
+				<td><a href="/event/@leaderboard.EventId/pilot/@pilot.PilotId">@DataUtil.GetPilotName(@pilot)</a></td>
+				<td>@DataUtil.GetPilotNation(@pilot)</td>
+				<td>@pilot.PositionReason</td>
+			</tr>
+		}
+	</table>
+}
+
+@code {
+	[Parameter]
+	public Leaderboard leaderboard { get; set; }
+}

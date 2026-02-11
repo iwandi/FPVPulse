@@ -1,0 +1,90 @@
+﻿@rendermode InteractiveWebAssembly
+@using FPVPulse.Ingest
+@using FPVPulse.LocalHost.Client.Components.Data;
+
+@if (leaderboard != null)
+{
+	@Prepare();
+	<table>
+		<tr>
+			<th>Position</th>
+			<th>Pilot</th>
+			<th>Nation</th>
+			<th>Reason</th>
+			@for (int i = 1; i <= brackets; i++)
+			{
+				<th>Bracket @i</th>
+			}
+		</tr>
+		@foreach (var pilot in leaderboard.Pilots)
+		{
+			<tr>
+				<td>@DataUtil.GetPilotPosition(@pilot)</td>
+				<td><a href="/event/@leaderboard.EventId/pilot/@pilot.PilotId">@DataUtil.GetPilotName(@pilot)</a></td>
+				<td>@DataUtil.GetPilotNation(@pilot)</td>
+				<td>@pilot.PositionReason</td>
+				@for (int i = 1; i <= brackets; i++)
+				{
+					<th>@GetBracketTime(i, pilot)</th>
+				}
+			</tr>
+		}
+	</table>
+}
+
+@code {
+	[Parameter]
+	public Leaderboard leaderboard { get; set; }
+	[Parameter]
+	public Race[] races { get; set; }
+
+	int brackets = 0;
+	Dictionary<int, (Race, Dictionary<int, RacePilotResult>)> raceResults = new Dictionary<int, (Race, Dictionary<int, RacePilotResult>)>();
+
+	string Prepare()
+	{
+		raceResults.Clear();
+		if(races != null && races.Length > 0)
+		{
+			foreach(var race in races)
+			{
+				var bracked = race.FirstOrderPoistion;
+				if (bracked > brackets)
+					brackets = bracked;
+
+				if (race.Results == null || race.Results.Length == 0)
+					continue;
+
+				foreach(var result in race.Results)
+				{
+					if (!result.LazyRacePilotId.HasValue)
+						continue;
+
+					var pilotId = result.LazyRacePilotId.Value;
+
+					if (!raceResults.TryGetValue(bracked, out var raceBracked))
+					{
+						raceBracked = (race, new Dictionary<int, RacePilotResult>());
+						raceResults.Add(bracked, raceBracked);
+					}
+
+					raceBracked.Item2[pilotId] = result;					
+				}
+			}
+		}
+		return string.Empty;
+	}
+
+	string GetBracketTime(int bracked, LeaderboardPilot pilot)
+	{
+		if (raceResults.TryGetValue(bracked, out var raceBracked))
+		{
+			if (raceBracked.Item2.TryGetValue(pilot.PilotId, out var result))
+			{
+				return result.LazyRacePilotId.ToString();
+				//return DataUtil.GetTime(result);
+			}
+		}
+		return string.Empty;
+	}
+}

@@ -5,15 +5,19 @@
 @inject NavigationManager NavigationManager
 @using FPVPulse.Ingest
 @using FPVPulse.LocalHost.Client.Components.Data
+@using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h3>EventLeaderboard</h3>
 
 @if (leaderboards != null)
 {
+	<a href="/event/@eventId">Back to Event</a>
 	@foreach(var leaderboard in leaderboards)
 	{
-		<code>@Newtonsoft.Json.JsonConvert.SerializeObject(leaderboard, Formatting.Indented)</code>
+		Race[] races = null;
+		racesByLeaderboardId.TryGetValue(leaderboard.InjestLeaderboardId, out races);
+				<LeaderboardDetailsView leaderboard="leaderboard" races="races"/>
 	}
 }
 else
@@ -28,14 +32,15 @@ else
 	[Parameter]
 	public string? raceTypeStr { get; set; }
 	List<Leaderboard> leaderboards = new List<Leaderboard>();
+	Dictionary<int, Race[]> racesByLeaderboardId = new();
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender && OperatingSystem.IsBrowser())
-			await LoadRaceAsync();
+			await LoadLeaderboards();
 	}
 
-	private async Task LoadRaceAsync()
+	private async Task LoadLeaderboards()
 	{
 		if (!Enum.TryParse<RaceType>(raceTypeStr, out var raceType))
 			raceType = RaceType.Unknown;
@@ -48,6 +53,11 @@ else
 		else
 		{
 			await SaveLoadLeaderboard(eventId, raceType, leaderboards);
+		}
+
+		foreach (var leaderboard in leaderboards)
+		{
+			await SaveLoadRaces(leaderboard.LeaderboardId, leaderboard.RaceType, racesByLeaderboardId);
 		}
 
 		StateHasChanged();
@@ -63,7 +73,23 @@ else
 		catch (Exception ex)
 		{
 			var httpEx = ex as System.Net.Http.HttpRequestException;
-			if (httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+			if (httpEx != null && httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+				return;
+			throw ex;
+		}
+	}
+
+	async Task SaveLoadRaces(int eventId, RaceType raceType, Dictionary<int, Race[]> racesByLeaderboardId)
+	{
+		try
+		{
+			var races = await Http.GetFromJsonAsync<Race[]>($"api/event/{eventId}/leaderboardResults/{raceType}");
+			racesByLeaderboardId.Add(eventId, races);
+		}
+		catch (Exception ex)
+		{
+			var httpEx = ex as System.Net.Http.HttpRequestException;
+			if (httpEx != null && httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
 				return;
 			throw ex;
 		}
