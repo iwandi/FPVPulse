@@ -62,5 +62,25 @@ namespace FPVPulse.LocalHost.RaceEvent
 			).Distinct().ToArray();
 			return pilotList;
 		}
+
+		[HttpGet("pilot/{pilotId}/eventIndex")]
+		public ActionResult<IEnumerable<IndexEntry>> GetPilotEventIndex(int pilotId)
+		{
+			using var scope = serviceProvider.CreateScope();
+			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
+
+			var eventList = (
+				from racePilot in db.RacePilots
+				join ev in db.Events on racePilot.EventId equals ev.EventId
+				where racePilot.PilotId == pilotId
+				select new IndexEntry
+				{
+					Id = ev.EventId,
+					Name = ev.Name
+				}
+			).Distinct().ToArray();
+
+			return eventList;
+		}
 	}
 }

@@ -106,6 +106,26 @@ namespace FPVPulse.LocalHost.RaceEvent
 			return result;
 		}
 
+		[HttpGet("event/{eventId}/pilot/{pilotId}/raceIndex")]
+		public IEnumerable<IndexEntry> GetRacePilotRaceIndex(int eventId, int pilotId)
+		{
+			using var scope = serviceProvider.CreateScope();
+			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
+
+			var pilotIndex = (
+				from rp in db.RacePilots
+				join r in db.Races on rp.RaceId equals r.RaceId
+				where rp.PilotId == pilotId && rp.EventId == eventId
+				select new IndexEntry
+				{
+					Id = r.RaceId,
+					Name = r.Name
+				}
+			).Distinct().ToArray();
+
+			return pilotIndex;
+		}
+
 		public static async Task FillRace(EventDbContext db, Race race)
 		{
 			race.Results = await db.RacePilotResults.Where(e => e.LazyRaceId == race.RaceId).ToArrayAsync();

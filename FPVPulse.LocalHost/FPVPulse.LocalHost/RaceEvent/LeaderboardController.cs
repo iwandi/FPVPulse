@@ -65,9 +65,37 @@ namespace FPVPulse.LocalHost.RaceEvent
 			return leaderboard;
 		}
 
+		[HttpGet("event/{eventId}/leaderboardResults/{raceType:int}")]
+		[HttpGet("event/{eventId}/leaderboardResults/{raceType:alpha}")]
+		public async Task<ActionResult<IEnumerable<Race>>> GetLeaderboardRaces(int eventId, RaceType raceType)
+		{
+			using var scope = serviceProvider.CreateScope();
+			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
+
+			var races = db.Races.Where(r => r.EventId == eventId && r.RaceType == raceType).ToArray();
+
+			if(races == null || races.Length == 0)
+				return NotFound();
+
+			foreach (var race in races)
+			{
+				await RaceController.FillRace(db, race);
+			}
+
+			return races;
+		}
+
 		public static async Task FillLeaderboard(EventDbContext db, Leaderboard leaderboard)
 		{
 			leaderboard.Pilots = await db.LeaderboardPilots.Where(lp => lp.LeaderboardId == leaderboard.LeaderboardId).ToArrayAsync();
+
+			if (leaderboard.Pilots != null)
+			{
+				foreach (var pilot in leaderboard.Pilots)
+				{
+					pilot.Pilot = await db.Pilots.FindAsync(pilot.PilotId);
+				}
+			}
 		}
 	}
 }
