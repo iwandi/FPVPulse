@@ -37,12 +37,41 @@ h1:focus {
     text-align: start;
 }
 
+.race-type-container {
+    display: flex;
+    align-items: stretch;
+}
+
+.brackets-container {
+    flex: 1;
+    width:100%;
+}
+
 .race-complited-container {
     display: flex;
     flex-wrap: wrap;
+    align-items: flex-start;
+    margin-bottom: 16px;
 }
 
-.race-complited-container div {
+.race-type-container-sub {
+    width: 100%;
+}
+
+.break-flex {
+    flex-basis: 100%;
+    width: 100%;
+}
+
+.leaderboard-float-right {
+    position: sticky;
+    top: 0;
+    width: 300px;
+    height: 0;
+    overflow-y: auto;
+}
+
+.float-element {
     border: 1px solid gray;
     margin: 2px;
     padding: 5px;
@@ -50,7 +79,17 @@ h1:focus {
     background-color: lightgray;
 }
 
-.break-flex {
-    flex-basis: 100%;
-    width: 100%;
+.right-details {
+    display: inline-flex;
+    align-items: flex-start;
+    gap: 1rem;
+}
+
+.fold-right-container {
+    display: flex;
+    flex-direction: row;
+}
+
+.fold-right-container summary {
+    cursor: pointer;
 }
