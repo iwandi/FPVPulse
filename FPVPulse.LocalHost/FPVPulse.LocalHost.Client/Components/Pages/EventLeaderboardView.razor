@@ -17,7 +17,7 @@
 	{
 		Race[] races = null;
 		racesByLeaderboardId.TryGetValue(leaderboard.InjestLeaderboardId, out races);
-				<LeaderboardDetailsView leaderboard="leaderboard" races="races"/>
+		<LeaderboardDetailsView leaderboard="leaderboard" races="races"/>
 	}
 }
 else
@@ -57,7 +57,7 @@ else
 
 		foreach (var leaderboard in leaderboards)
 		{
-			await SaveLoadRaces(leaderboard.LeaderboardId, leaderboard.RaceType, racesByLeaderboardId);
+			await SaveLoadRaces(eventId, leaderboard.LeaderboardId, leaderboard.RaceType, racesByLeaderboardId);
 		}
 
 		StateHasChanged();
@@ -79,12 +79,12 @@ else
 		}
 	}
 
-	async Task SaveLoadRaces(int eventId, RaceType raceType, Dictionary<int, Race[]> racesByLeaderboardId)
+	async Task SaveLoadRaces(int eventId, int leaderboardId, RaceType raceType, Dictionary<int, Race[]> racesByLeaderboardId)
 	{
 		try
 		{
 			var races = await Http.GetFromJsonAsync<Race[]>($"api/event/{eventId}/leaderboardResults/{raceType}");
-			racesByLeaderboardId.Add(eventId, races);
+			racesByLeaderboardId.Add(leaderboardId, races);
 		}
 		catch (Exception ex)
 		{

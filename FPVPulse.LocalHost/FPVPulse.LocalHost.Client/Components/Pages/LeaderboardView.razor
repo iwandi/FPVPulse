@@ -37,7 +37,7 @@ else
 		leaderboard = await Http.GetFromJsonAsync<Leaderboard>($"api/leaderboard/{leaderboardId}");
 
 		if (leaderboard != null)
-			races = await SaveLoadRaces(leaderboard.LeaderboardId, leaderboard.RaceType);
+			races = await SaveLoadRaces(leaderboard.EventId, leaderboard.RaceType);
 		else
 			races = null;
 
