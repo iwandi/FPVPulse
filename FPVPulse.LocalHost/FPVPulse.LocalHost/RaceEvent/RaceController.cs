@@ -31,7 +31,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			if (race == null)
 				return NotFound();
 
-			FillRace(db, race).Wait();
+			EventDbContext.FillRace(db, race).Wait();
 
 			return race;
 		}
@@ -88,7 +88,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			if (racePilot == null)
 				return NotFound();
 
-			FillRacePilot(db, racePilot).Wait();
+			await EventDbContext.FillRacePilot(db, racePilot);
 
 			return racePilot;
 		}
@@ -124,22 +124,6 @@ namespace FPVPulse.LocalHost.RaceEvent
 			).Distinct().ToArray();
 
 			return pilotIndex;
-		}
-
-		public static async Task FillRace(EventDbContext db, Race race)
-		{
-			race.Results = await db.RacePilotResults.Where(e => e.LazyRaceId == race.RaceId).ToArrayAsync();
-			race.Pilots = await db.RacePilots.Where(e => e.RaceId == race.RaceId).ToArrayAsync();
-
-			foreach (var pilot in race.Pilots)
-			{
-				await FillRacePilot(db, pilot);
-			}
-		}
-
-		public static async Task FillRacePilot(EventDbContext db, RacePilot pilot)
-		{
-			pilot.Pilot = await db.Pilots.Where(p => p.PilotId == pilot.PilotId).FirstOrDefaultAsync();
 		}
 	}
 }

@@ -30,7 +30,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			if (leaderboard == null)
 				return NotFound();
 
-			FillLeaderboard(db, leaderboard).Wait();
+			EventDbContext.FillLeaderboard(db, leaderboard).Wait();
 
 			return leaderboard;
 		}
@@ -60,7 +60,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			if (leaderboard == null)
 				return NotFound();
 
-			FillLeaderboard(db, leaderboard).Wait();
+			EventDbContext.FillLeaderboard(db, leaderboard).Wait();
 
 			return leaderboard;
 		}
@@ -79,23 +79,10 @@ namespace FPVPulse.LocalHost.RaceEvent
 
 			foreach (var race in races)
 			{
-				await RaceController.FillRace(db, race);
+				await EventDbContext.FillRace(db, race);
 			}
 
 			return races;
-		}
-
-		public static async Task FillLeaderboard(EventDbContext db, Leaderboard leaderboard)
-		{
-			leaderboard.Pilots = await db.LeaderboardPilots.Where(lp => lp.LeaderboardId == leaderboard.LeaderboardId).ToArrayAsync();
-
-			if (leaderboard.Pilots != null)
-			{
-				foreach (var pilot in leaderboard.Pilots)
-				{
-					pilot.Pilot = await db.Pilots.FindAsync(pilot.PilotId);
-				}
-			}
 		}
 	}
 }
