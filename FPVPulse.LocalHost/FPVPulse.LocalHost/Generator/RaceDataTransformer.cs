@@ -65,7 +65,37 @@ namespace FPVPulse.LocalHost.Generator
 
 		void WriteData(Race race, DbInjestRace injestRace)
 		{
-			race.Name = injestRace.InjestName ?? string.Empty;
+			var name = injestRace.InjestName;
+			var shortName = name;
+			if (injestRace.FirstOrderPoistion.HasValue && injestRace.SecondOrderPosition.HasValue)
+			{
+				if (injestRace.RaceType == RaceType.Qualifying)
+				{
+					name = $"Qualifying Bracket: {injestRace.FirstOrderPoistion} Heat: {injestRace.SecondOrderPosition}";
+					shortName = $"Q{injestRace.FirstOrderPoistion}-{injestRace.SecondOrderPosition}";
+				}
+				else if (injestRace.RaceType == RaceType.Practice)
+				{
+					name = $"Practice Bracket: {injestRace.FirstOrderPoistion} Heat: {injestRace.SecondOrderPosition}";
+					shortName = $"P{injestRace.FirstOrderPoistion}-{injestRace.SecondOrderPosition}";
+				}
+			}
+			else if(injestRace.RaceType == RaceType.Mains)
+			{
+				if (injestRace.FirstOrderPoistion.HasValue)
+				{
+					name = $"Main Race: {injestRace.FirstOrderPoistion}";
+					shortName = $"M{injestRace.FirstOrderPoistion}";
+				}
+				else if (injestRace.SecondOrderPosition.HasValue)
+				{
+					name = $"Main Race: {injestRace.SecondOrderPosition}";
+					shortName = $"M{injestRace.SecondOrderPosition}";
+				}
+			}
+
+			race.Name = name ?? string.Empty;
+			race.ShortName = shortName ?? string.Empty;
 			race.RaceType = injestRace.RaceType ?? RaceType.Unknown;
 			race.RaceLayout = injestRace.RaceLayout ?? RaceLayout.Unknown;
 			race.FirstOrderPoistion = injestRace.FirstOrderPoistion ?? 0;

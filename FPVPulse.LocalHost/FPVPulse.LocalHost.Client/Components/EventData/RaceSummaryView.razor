@@ -6,7 +6,7 @@
 {
 	@Prepare();
 	<div>
-		<h3><a href="race/@race.RaceId">@race.Name</a></h3>
+		<h3><a href="race/@race.RaceId">@race.ShortName</a></h3>
 		@if(race.Pilots != null && race.Pilots.Length > 0)
 		{
 			<details class="fold-right-container">

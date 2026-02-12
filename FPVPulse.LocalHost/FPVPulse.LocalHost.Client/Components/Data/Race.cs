@@ -16,6 +16,7 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 
 		[MaxLength(30)]
 		public string Name { get; set; } = string.Empty;
+		public string ShortName { get; set; } = string.Empty;
 		public RaceType RaceType { get; set; }
 
 		public RaceLayout RaceLayout { get; set; }
