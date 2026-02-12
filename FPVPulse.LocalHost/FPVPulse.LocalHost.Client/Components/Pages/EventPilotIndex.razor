@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
+@using Microsoft.AspNetCore.SignalR.Client
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h1>Event Pilots</h1>
@@ -11,18 +12,18 @@
 {
 	<a href="/event/@eventId">Back to Event</a>
 	<h2 class="card-title">Pilots</h2>
-    <menu class="menu-container menu-depth-2">
-	@foreach (var entry in index)
-	{
-		if (pilots.TryGetValue(@entry.Id, out var pilot))
+	<menu class="menu-container menu-depth-2">
+		@foreach (var entry in index)
 		{
-			<li class="link-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></li>
+			if (pilots.TryGetValue(@entry.Id, out var pilot))
+			{
+				<li class="link-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></li>
+			}
+			else
+			{
+				<li class="link-element"><a href="/event/@eventId/pilot/@entry.Id">@entry.Name</a></li>
+			}
 		}
-		else
-		{
-			<li class="link-element"><a href="/event/@eventId/pilot/@entry.Id">@entry.Name</a></li>
-		}
-	}
 	</menu>
 }
 else
@@ -33,6 +34,8 @@ else
 @code {
 	[Parameter]
 	public int eventId { get; set; }
+
+	private HubConnection? hubConnection;
 
 	IndexEntry[] index;
 	Dictionary<int, Pilot> pilots = new Dictionary<int, Pilot>();
@@ -53,5 +56,27 @@ else
 		}
 
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Pilot>(ChangeSignalMessages.ChangePilotData, OnSignalChangePilotData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.PilotData);
+	}
+
+	private void OnSignalChangePilotData(int id, int parentId, Pilot pilot)
+	{
+		DataUtil.WriteIndexEntry(index, id, pilot?.DisplayName);
+		if(pilot == null)
+		{
+			if (pilots.ContainsKey(id))
+				pilots.Remove(id);
+		}
+		else
+			pilots[id] = pilot;
+		InvokeAsync(StateHasChanged);
 	}
 }

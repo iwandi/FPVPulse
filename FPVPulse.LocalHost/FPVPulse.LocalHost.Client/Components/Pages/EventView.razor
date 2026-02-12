@@ -5,6 +5,7 @@
 @using FPVPulse.Ingest
 @using FPVPulse.LocalHost.Client.Components.Data
 @using FPVPulse.LocalHost.Client.Components.EventData
+@using Microsoft.AspNetCore.SignalR.Client
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 
@@ -12,81 +13,81 @@
 {
 	<h1 class="card-title">@eventData.Name</h1>
 	<menu class="menu-container menu-depth-2">
-			<li class="link-element"><a href="/event/@eventId/leaderboards">Leaderboards</a></li>
-			<li class="link-element"><a href="/event/@eventId/pilots">Pilots</a></li>
+		<li class="link-element"><a href="/event/@eventId/leaderboards">Leaderboards</a></li>
+		<li class="link-element"><a href="/event/@eventId/pilots">Pilots</a></li>
 	</menu>
 	<h2 class="card-title"><a href="/event/@eventId/pilots">Pilots</a></h2>
 	<menu class="menu-container menu-depth-2">
-	@foreach (var pilot in pilots.Values)
-	{
-		<li class="link-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></li>
-	}
+		@foreach (var pilot in pilots.Values)
+		{
+			<li class="link-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></li>
+		}
 	</menu>
 	<h2 class="card-title">Races</h2><br />
 	@if (eventData.Races != null && eventData.Races.Length > 0)
 	{
 		@foreach (var raceGroupRaceType in eventData.Races.OrderBy(e =>
-					e.RaceType == RaceType.Practice ? 0 :
-					e.RaceType == RaceType.Qualifying ? 1 :
-					e.RaceType == RaceType.Mains ? 2 :
-					e.RaceType == RaceType.Unknown ? 3 : 99)
-					.GroupBy(e => e.RaceType))
+													e.RaceType == RaceType.Practice ? 0 :
+													e.RaceType == RaceType.Qualifying ? 1 :
+													e.RaceType == RaceType.Mains ? 2 :
+													e.RaceType == RaceType.Unknown ? 3 : 99)
+													.GroupBy(e => e.RaceType))
 		{
 			<div class="race-type-container">
-			<div class="race-type-container-sub">
-			<div class="brackets-container">
-			<h3>@raceGroupRaceType.Key</h3>
-			@foreach (var brackedGroup in raceGroupRaceType.GroupBy(e => e.FirstOrderPoistion))
-			{
-				@if(raceGroupRaceType.Key == RaceType.Qualifying ||
-					raceGroupRaceType.Key == RaceType.Practice)
-				{
-					<h4>Bracket @brackedGroup.Key</h4>
-					<hr>
-				}
-				<div class="race-complited-container">
-				@foreach (var race in brackedGroup.OrderBy(e => e.SecondOrderPosition))
-				{
-					@if (IsCurrentRace(race))
-					{
-						<div class="break-flex float-element">
-							<h3>Current Race</h3>
-							<RaceDetailsView race="@race" linkToRace="true"/>
-						</div>
-					}
-					else if (IsNextRace(race))
-					{
-						<div class="break-flex float-element">
-							<h3>Next Race</h3>
-							<RaceDetailsView race="@race" linkToRace="true"/>	
-						</div>
-					}
-					else if (IsComplied(race))
-					{
-						<div class="float-element">
-							<RaceSummaryView race="@race" />
-						</div>
-					}
-					else
-					{
-						<div class="break-flex float-element">
-							<RaceSummaryView race="@race" />									
-						</div>
-					}
-				}
-				</div>
-			}
-			</div>
-			</div>
-			@if (leaderboards.TryGetValue(raceGroupRaceType.Key, out var leaerboard))
-			{
-				<div class="leaderboard-float-right float-element">
-					<div class="leaderboard-narrow-container">
-						<h3><a href="/leaderboard/@leaerboard.LeaderboardId">@raceGroupRaceType.Key</a></h3>
-						<LeaderboardNarrowView leaderboard="@leaerboard" />
+				<div class="race-type-container-sub">
+					<div class="brackets-container">
+						<h3>@raceGroupRaceType.Key</h3>
+						@foreach (var brackedGroup in raceGroupRaceType.GroupBy(e => e.FirstOrderPoistion))
+						{
+							@if(raceGroupRaceType.Key == RaceType.Qualifying ||
+																												raceGroupRaceType.Key == RaceType.Practice)
+							{
+								<h4>Bracket @brackedGroup.Key</h4>
+								<hr>
+							}
+							<div class="race-complited-container">
+								@foreach (var race in brackedGroup.OrderBy(e => e.SecondOrderPosition))
+								{
+									@if (IsCurrentRace(race))
+									{
+										<div class="break-flex float-element">
+											<h3>Current Race</h3>
+											<RaceDetailsView race="@race" linkToRace="true"/>
+										</div>
+									}
+									else if (IsNextRace(race))
+									{
+										<div class="break-flex float-element">
+											<h3>Next Race</h3>
+											<RaceDetailsView race="@race" linkToRace="true"/>	
+										</div>
+									}
+									else if (IsComplied(race))
+									{
+										<div class="float-element">
+											<RaceSummaryView race="@race" />
+										</div>
+									}
+									else
+									{
+										<div class="break-flex float-element">
+											<RaceSummaryView race="@race" />									
+										</div>
+									}
+								}
+							</div>
+						}
 					</div>
 				</div>
-			}
+				@if (leaderboards.TryGetValue(raceGroupRaceType.Key, out var leaerboard))
+				{
+					<div class="leaderboard-float-right float-element">
+						<div class="leaderboard-narrow-container">
+							<h3><a href="/leaderboard/@leaerboard.LeaderboardId">@raceGroupRaceType.Key</a></h3>
+							<LeaderboardNarrowView leaderboard="@leaerboard" />
+						</div>
+					</div>
+				}
 			</div>
 		}
 	}
@@ -100,7 +101,10 @@ else
 	[Parameter]
 	public int eventId { get; set; }
 
+	private HubConnection? hubConnection;
+
 	Event eventData;
+	EventShedule eventShedule;
 
 	Dictionary<int, Pilot> pilots = new Dictionary<int, Pilot>();
 	Dictionary<RaceType, Leaderboard> leaderboards = new Dictionary<RaceType, Leaderboard>();
@@ -116,14 +120,30 @@ else
 	private async Task LoadRaceAsync()
 	{
 		eventData = await Http.GetFromJsonAsync<Event>($"api/event/{eventId}");
+		eventShedule = await Http.GetFromJsonAsync<EventShedule>($"api/event/{eventId}/shedule");
 
 		await LoadRaces();
 		await LoadPilots();
 		await LoadLeaderboards();
 
-		JS.InvokeVoidAsync("console.log", "OnChangeRaceData", eventData.Shedule);
-
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Event>(ChangeSignalMessages.ChangeEventData, OnSignalChangeEventData);
+		hubConnection.On<int, int, EventShedule>(ChangeSignalMessages.ChangeEventSheduleData, OnSignalChangeEventSheduleData);
+		hubConnection.On<int, int, Leaderboard>(ChangeSignalMessages.ChangeLeaderboardData, OnSignalChangeLeaderboardData);
+		hubConnection.On<int, int, Race>(ChangeSignalMessages.ChangeRaceData, OnSignalChangeRaceData);
+		hubConnection.On<int, int, Pilot>(ChangeSignalMessages.ChangePilotData, OnSignalChangePilotData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.EventData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.EventSheduleData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.LeaderboardData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.RaceData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.PilotData);
 	}
 
 	async Task LoadRaces()
@@ -170,6 +190,67 @@ else
 		}
 	}
 
+	private void OnSignalChangeEventData(int id, int parentId, Event @event)
+	{
+		JS.InvokeVoidAsync("console.log", "OnSignalChangeEventData", id, parentId, @event);
+		if (id == eventId)
+		{
+			eventData = @event;
+			InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private void OnSignalChangeEventSheduleData(int id, int parentId, EventShedule eventShedule)
+	{
+		JS.InvokeVoidAsync("console.log", "OnSignalChangeEventSheduleData", id, parentId, eventShedule);
+		if (parentId == eventId)
+		{
+			this.eventShedule = eventShedule;
+			InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private void OnSignalChangeLeaderboardData(int id, int parentId, Leaderboard leaderboard)
+	{
+		JS.InvokeVoidAsync("console.log", "OnSignalChangeLeaderboardData", id, parentId, leaderboard);
+		if (parentId == eventId)
+		{
+			if(leaderboard == null)
+			{
+				var removeKey = leaderboards.Where(kv => kv.Value.LeaderboardId == id).Select(kv => kv.Key).FirstOrDefault();
+				if (removeKey != default)
+					leaderboards.Remove(removeKey);
+			}
+			else
+				leaderboards[leaderboard.RaceType] = leaderboard;
+			InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private void OnSignalChangeRaceData(int id, int parentId, Race race)
+	{
+		JS.InvokeVoidAsync("console.log", "OnSignalChangeRaceData", id, parentId, race);
+		if(parentId == eventId && eventData != null)
+		{
+			if (race == null)
+				eventData.Races = eventData.Races.Where(r => r.RaceId != id).ToArray();
+			else
+			{
+				var index = Array.FindIndex(eventData.Races, r => r.RaceId == id);
+				if (index > 0)
+					eventData.Races[index] = race;
+			}
+			InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private void OnSignalChangePilotData(int id, int parentId, Pilot pilot)
+	{
+		JS.InvokeVoidAsync("console.log", "OnSignalChangePilotData", id, parentId, pilot);
+		pilots[id] = pilot;
+		InvokeAsync(StateHasChanged);
+	}
+
 	bool IsComplied(Race race)
 	{
 		if(race != null && race.Results != null)
@@ -181,11 +262,13 @@ else
 
 	bool IsCurrentRace(Race race)
 	{
-		return eventData?.Shedule?.CurrentRaceId == race.RaceId;
+		JS.InvokeVoidAsync("console.log", "IsCurrentRace", race?.RaceId, eventShedule?.CurrentRaceId);
+		return eventShedule?.CurrentRaceId == race.RaceId;
 	}
 
 	bool IsNextRace(Race race)
 	{
-		return eventData?.Shedule?.NextRaceId == race.RaceId;		
+		JS.InvokeVoidAsync("console.log", "IsNextRace", race?.RaceId, eventShedule?.NextRaceId);
+		return eventShedule?.NextRaceId == race.RaceId;
 	}
 }

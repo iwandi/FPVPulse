@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
 @using FPVPulse.LocalHost.Client.Components.EventData
+@using Microsoft.AspNetCore.SignalR.Client
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 
@@ -29,6 +30,8 @@ else
 	[Parameter]
 	public int pilotId { get; set; }
 
+	private HubConnection? hubConnection;
+
 	Pilot pilot;
 
 	IndexEntry[] events;
@@ -42,9 +45,27 @@ else
 	private async Task LoadRaceAsync()
 	{
 		pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{pilotId}");
-
 		events = await Http.GetFromJsonAsync<IndexEntry[]>($"api/pilot/{pilotId}/eventIndex");
 
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Pilot>(ChangeSignalMessages.ChangePilotData, OnSignalChangePilotData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.PilotData);
+		// TODO: Dynamic update of events list ?
+	}
+
+	private void OnSignalChangePilotData(int id, int parentId, Pilot pilot)
+	{
+		if (pilotId == id)
+		{
+			this.pilot = pilot;
+			InvokeAsync(StateHasChanged);
+		}
 	}
 }

@@ -5,14 +5,16 @@
 @using FPVPulse.Ingest
 @using FPVPulse.LocalHost.Client.Components.Data
 @using FPVPulse.LocalHost.Client.Components.EventData
+@using Microsoft.AspNetCore.SignalR.Client
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h1>Leaderboard</h1>
 
 @if (leaderboard != null)
 {
+	var racesArray = races.ToArray();
 	<a href="/event/@leaderboard.EventId">Back to Event</a>
-	<LeaderboardDetailsView leaderboard="leaderboard" races="races"/>
+	<LeaderboardDetailsView leaderboard="leaderboard" races="racesArray"/>
 }
 else
 {
@@ -23,8 +25,10 @@ else
 	[Parameter]
 	public int leaderboardId { get; set; }
 
+	private HubConnection? hubConnection;
+
 	Leaderboard leaderboard;
-	Race[] races;
+	List<Race> races;
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -42,21 +46,59 @@ else
 			races = null;
 
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Leaderboard>(ChangeSignalMessages.ChangeLeaderboardData, OnSignalChangeLeaderboardData);
+		hubConnection.On<int, int, Race>(ChangeSignalMessages.ChangeRaceData, OnSignalChangeRaceData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.LeaderboardData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.RaceData);
 	}
 
-	async Task<Race[]> SaveLoadRaces(int eventId, RaceType raceType)
+	async Task<List<Race>> SaveLoadRaces(int eventId, RaceType raceType)
 	{
 		try
 		{
 			var races = await Http.GetFromJsonAsync<Race[]>($"api/event/{eventId}/leaderboardResults/{raceType}");
-			return races;
+			return races.ToList();
 		}
 		catch (Exception ex)
 		{
 			var httpEx = ex as System.Net.Http.HttpRequestException;
 			if (httpEx != null && httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
-				return null;
+				return new List<Race>();
 			throw ex;
+		}
+	}
+
+	private void OnSignalChangeLeaderboardData(int id, int parentId, Leaderboard leaderboard)
+	{
+		if (id == leaderboardId)
+		{
+			this.leaderboard = leaderboard;
+			InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private void OnSignalChangeRaceData(int id, int parentId, Race race)
+	{
+		if (leaderboard != null && parentId == leaderboard.EventId)
+		{
+			if(race == null)
+				races.RemoveAll(r => r.RaceId == id);
+			else if(race.RaceType == leaderboard.RaceType)
+			{
+				var index = races.FindIndex(r => r.RaceId == id);
+				if (index > 0)
+					races[index] = race;
+				else
+					races.Add(race);
+			}
+			InvokeAsync(StateHasChanged);
 		}
 	}
 }

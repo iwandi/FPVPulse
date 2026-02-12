@@ -3,6 +3,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
+@using Microsoft.AspNetCore.SignalR.Client
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h1>Pilots</h1>
@@ -29,6 +30,8 @@ else
 }
 
 @code {
+	private HubConnection? hubConnection;
+
 	IndexEntry[] index;
 	Dictionary<int, Pilot> pilots = new Dictionary<int, Pilot>();
 
@@ -46,6 +49,23 @@ else
 			var pilot = await Http.GetFromJsonAsync<Pilot>($"api/pilot/{entry.Id}");
 			pilots[entry.Id] = pilot;
 		}
+
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Pilot>(ChangeSignalMessages.ChangePilotData, OnSignalChangePilotData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.PilotData);
+	}
+
+	private void OnSignalChangePilotData(int id, int parentId, Pilot pilot)
+	{
+		DataUtil.WriteIndexEntry(index, id, pilot.DisplayName);
+		pilots[id] = pilot;
+		InvokeAsync(StateHasChanged);
 	}
 }

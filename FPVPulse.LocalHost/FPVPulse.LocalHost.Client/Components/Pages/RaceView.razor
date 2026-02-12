@@ -4,6 +4,7 @@
 @inject NavigationManager NavigationManager
 @using FPVPulse.LocalHost.Client.Components.Data
 @using FPVPulse.LocalHost.Client.Components.EventData
+@using Microsoft.AspNetCore.SignalR.Client
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 
@@ -13,7 +14,7 @@
 	<a href="/event/@race?.EventId">Back to Event</a>
 	<hr>
 
-	 @*<code>@Newtonsoft.Json.JsonConvert.SerializeObject(race, Formatting.Indented)</code>*@
+	@*<code>@Newtonsoft.Json.JsonConvert.SerializeObject(race, Formatting.Indented)</code>*@
 	<RaceDetailsView race="@race" />
 }
 else
@@ -25,6 +26,8 @@ else
 @code {
 	[Parameter]
 	public int raceId { get; set; }
+
+	private HubConnection? hubConnection;
 
 	Race race;
 
@@ -38,5 +41,23 @@ else
 	{
 		race = await Http.GetFromJsonAsync<Race>($"api/race/{raceId}");
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Race>(ChangeSignalMessages.ChangeRaceData, OnSignalChangeRaceData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.RaceData);
+	}
+
+	private void OnSignalChangeRaceData(int id, int parentId, Race race)
+	{
+		if (raceId == id)
+		{
+			this.race = race;
+			InvokeAsync(StateHasChanged);
+		}
 	}
 }

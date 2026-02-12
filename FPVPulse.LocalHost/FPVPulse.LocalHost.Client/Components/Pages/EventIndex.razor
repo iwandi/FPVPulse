@@ -1,5 +1,7 @@
 ﻿@page "/events"
 @page "/"
+@using FPVPulse.LocalHost.Client.Components.Data
+@using Microsoft.AspNetCore.SignalR.Client
 @rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
@@ -24,6 +26,8 @@ else
 @code {
 	IndexEntry[] index;
 
+	private HubConnection? hubConnection;
+
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
 		if (firstRender && OperatingSystem.IsBrowser())
@@ -33,6 +37,21 @@ else
 	private async Task LoadRaceAsync()
 	{
 		index = await Http.GetFromJsonAsync<IndexEntry[]>("api/eventIndex/");
+
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Event>(ChangeSignalMessages.ChangeEventData, OnSignalChangeEventData);
+	}
+
+	private void OnSignalChangeEventData(int id, int parentId, Event @event)
+	{
+		DataUtil.WriteIndexEntry(index, id, @event?.Name);
+		InvokeAsync(StateHasChanged);
 	}
 }

@@ -5,6 +5,7 @@
 @using FPVPulse.Ingest
 @using FPVPulse.LocalHost.Client.Components.Data
 @using FPVPulse.LocalHost.Client.Components.EventData
+@using Microsoft.AspNetCore.SignalR.Client
 @using Newtonsoft.Json
 @inject IJSRuntime JS
 <h1>Pilot</h1>
@@ -25,20 +26,21 @@
 	<PilotDetailView pilot=pilot linkToPilot=true/>
 	if(raceIndex != null)
 	{
+		var racesArray = races.ToArray();
 		if (leaderboardPractice != null)
 		{
 			<h2 class="card-title"><a href="event/@eventId/leaderboard/Practice">Practice</a></h2>
-			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardPractice" races="@races"/>
+			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardPractice" races="@racesArray"/>
 		}
 		if (leaderboardQualifying != null)
 		{
 			<h2 class="card-title"><a href="event/@eventId/leaderboard/Qualifying">Qualifying</a></h2>
-			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardQualifying" races="@races"/>
+			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardQualifying" races="@racesArray"/>
 		}
 		if (leaderboardMain != null)
 		{
 			<h2 class="card-title"><a href="event/@eventId/leaderboard/Main">Main</a></h2>
-			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardMain" races="@races"/>
+			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardMain" races="@racesArray"/>
 		}
 		<h2 class="card-title">Races</h2><br />
 		<div class="race-complited-container">
@@ -65,6 +67,8 @@ else
 	[Parameter]
 	public int pilotId { get; set; }
 
+	private HubConnection? hubConnection;
+
 	Pilot pilot;
 
 	Leaderboard leaderboardPractice;
@@ -73,7 +77,7 @@ else
 
 	IndexEntry[] raceIndex;
 	Dictionary<int, Race> raceLookup = new();
-	Race[] races;
+	List<Race> races;
 
 	IndexEntry[] events;
 
@@ -99,7 +103,7 @@ else
 				}
 			}
 		}
-		races = raceLookup.Values.ToArray();
+		races = raceLookup.Values.ToList();
 
 		events = await Http.GetFromJsonAsync<IndexEntry[]>($"api/pilot/{pilotId}/eventIndex");
 
@@ -108,6 +112,19 @@ else
 		leaderboardMain = await SaveLoadLeaderboard(eventId, RaceType.Mains);
 
 		StateHasChanged();
+
+		hubConnection = new HubConnectionBuilder()
+			.WithUrl(NavigationManager.ToAbsoluteUri("/hubs/change"))
+			.WithAutomaticReconnect()
+			.Build();
+		await hubConnection.StartAsync();
+
+		hubConnection.On<int, int, Leaderboard>(ChangeSignalMessages.ChangeLeaderboardData, OnSignalChangeLeaderboardData);
+		hubConnection.On<int, int, Race>(ChangeSignalMessages.ChangeRaceData, OnSignalChangeRaceData);
+		hubConnection.On<int, int, Pilot>(ChangeSignalMessages.ChangePilotData, OnSignalChangePilotData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.LeaderboardData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.RaceData);
+		await hubConnection.InvokeAsync(ChangeSignalMessages.Subscribe, ChangeGroup.PilotData);
 	}
 
 	async Task<Leaderboard?> SaveLoadLeaderboard(int eventId, RaceType raceType)
@@ -123,6 +140,64 @@ else
 			if (httpEx != null && httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
 				return null;
 			throw ex;
+		}
+	}
+	private void OnSignalChangeLeaderboardData(int id, int parentId, Leaderboard leaderboard)
+	{
+		if (parentId == eventId)
+		{
+			if(leaderboard == null)
+			{
+				if(leaderboardPractice != null && leaderboardPractice.LeaderboardId == id)
+					leaderboardPractice = null;
+				if (leaderboardQualifying != null && leaderboardQualifying.LeaderboardId == id)
+					leaderboardQualifying = null;
+				if (leaderboardMain != null && leaderboardMain.LeaderboardId == id)
+					leaderboardMain = null;
+			}
+			else
+			{
+				if(leaderboard.RaceType == RaceType.Practice)
+					leaderboardPractice = leaderboard;
+				if (leaderboard.RaceType == RaceType.Qualifying)
+					leaderboardQualifying = leaderboard;
+				if (leaderboard.RaceType == RaceType.Mains)
+					leaderboardMain = leaderboard;
+			}
+			InvokeAsync(StateHasChanged);
+		}
+	}
+
+	private void OnSignalChangeRaceData(int id, int parentId, Race race)
+	{
+		if (parentId == eventId)
+		{
+			DataUtil.WriteIndexEntry(raceIndex, id, race?.Name);
+			if(race == null)
+			{
+				if (raceLookup.ContainsKey(id))
+					raceLookup.Remove(id);
+				races.RemoveAll(r => r.RaceId == id);
+			}
+			else
+			{
+				raceLookup[id] = race;
+				var index = races.FindIndex(r => r.RaceId == id);
+				if (index > 0)
+					races[index] = race;
+				else
+					races.Add(race);
+			}
+			InvokeAsync(StateHasChanged);			
+		}
+	}
+
+	private void OnSignalChangePilotData(int id, int parentId, Pilot pilot)
+	{
+		if (pilotId == id)
+		{
+			this.pilot = pilot;
+			InvokeAsync(StateHasChanged);
 		}
 	}
 }
