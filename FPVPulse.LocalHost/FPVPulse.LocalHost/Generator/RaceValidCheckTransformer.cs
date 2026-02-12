@@ -29,9 +29,26 @@ namespace FPVPulse.LocalHost.Generator
 
 		protected override async Task<bool> Process(EventDbContext db, Race data, int id, int parentId)
 		{
-			// TODO : Check detect if race is a valid race
+			bool invalid = false;
 
-			await Task.CompletedTask;
+			if (data.RaceType == Ingest.RaceType.Unknown)
+				invalid = true;
+			else if(data.RaceType == Ingest.RaceType.Qualifying && (data.FirstOrderPoistion == 0 || data.SecondOrderPosition == 0))
+				invalid = true;
+			else if (data.RaceType == Ingest.RaceType.Practice && (data.FirstOrderPoistion == 0 || data.SecondOrderPosition == 0))
+				invalid = true;
+			else if (data.RaceType == Ingest.RaceType.Mains && (data.FirstOrderPoistion == 0 && data.SecondOrderPosition == 0))
+				invalid = true;
+
+			data.Invalid = invalid;
+
+			var hasChanges = await db.SaveChangesAsync() > 0;
+
+
+			// DANGER : this is a selve invokation.
+			if (hasChanges)
+				await changeSignaler.SignalChangeAsync(Client.ChangeGroup.Race, id, parentId, data);
+
 			return true;
 		}
 	}
