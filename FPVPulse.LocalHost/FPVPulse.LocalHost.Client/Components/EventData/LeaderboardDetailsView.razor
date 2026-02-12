@@ -11,9 +11,9 @@
 			<th>Pilot</th>
 			<th>Nation</th>
 			<th>Reason</th>
-			@for (int i = 1; i <= brackets; i++)
+			@for (int brackedId = 1; brackedId <= maxBracket; brackedId++)
 			{
-				<th>Bracket @i</th>
+				<th>Bracket @brackedId</th>
 			}
 		</tr>
 		@foreach (var pilot in leaderboard.Pilots)
@@ -23,9 +23,17 @@
 				<td><a href="/event/@leaderboard.EventId/pilot/@pilot.PilotId">@DataUtil.GetPilotName(@pilot)</a></td>
 				<td>@DataUtil.GetPilotNation(@pilot)</td>
 				<td>@pilot.PositionReason</td>
-				@for (int i = 1; i <= brackets; i++)
+				@for (int brackedId = 1; brackedId <= maxBracket; brackedId++)
 				{
-					<th>@GetBracketTime(i, pilot)</th>
+					var time = GetBracketTime(brackedId, pilot, out var raceId);
+					if(raceId.HasValue)
+					{
+						<th><a href="race/@raceId">@time</a></th>
+					}
+					else
+					{
+						<th>@time</th>						
+					}
 				}
 			</tr>
 		}
@@ -33,58 +41,67 @@
 }
 
 @code {
+	class Bracket
+	{
+		public int BracketId { get; set; } = 0;
+		public List<Race> Races { get; set; } = new();
+		public Dictionary<int, RacePilotResult> PilotResults { get; set; } = new ();
+	}
+
 	[Parameter]
 	public Leaderboard leaderboard { get; set; }
 	[Parameter]
 	public Race[] races { get; set; }
 
-	int brackets = 0;
-	Dictionary<int, (Race, Dictionary<int, RacePilotResult>)> raceResults = new Dictionary<int, (Race, Dictionary<int, RacePilotResult>)>();
+	int maxBracket = 0;
+	Dictionary<int, Bracket> brackets = new Dictionary<int, Bracket>();
 
 	string Prepare()
 	{
-		raceResults.Clear();
+		brackets.Clear();
 		if(races != null && races.Length > 0)
 		{
 			foreach(var race in races)
 			{
-				var bracked = race.FirstOrderPoistion;
-				if (bracked > brackets)
-					brackets = bracked;
+				var brackedId = race.FirstOrderPoistion;
+				if (brackedId > maxBracket)
+					maxBracket = brackedId;
 
 				if (race.Results == null || race.Results.Length == 0)
 					continue;
 
+				if (!brackets.TryGetValue(brackedId, out var bracket))
+				{
+					bracket = new Bracket { BracketId = brackedId };
+					brackets.Add(brackedId, bracket);
+				}
+				bracket.Races.Add(race);
+
 				foreach(var result in race.Results)
 				{
-					if (!result.LazyRacePilotId.HasValue)
+					if (!result.LazyPilotId.HasValue)
 						continue;
 
-					var pilotId = result.LazyRacePilotId.Value;
+					var pilotId = result.LazyPilotId.Value;
 
-					if (!raceResults.TryGetValue(bracked, out var raceBracked))
-					{
-						raceBracked = (race, new Dictionary<int, RacePilotResult>());
-						raceResults.Add(bracked, raceBracked);
-					}
-
-					raceBracked.Item2[pilotId] = result;					
+					bracket.PilotResults[pilotId] = result;
 				}
 			}
 		}
 		return string.Empty;
 	}
 
-	string GetBracketTime(int bracked, LeaderboardPilot pilot)
+	string GetBracketTime(int brackedId, LeaderboardPilot pilot, out int? raceId)
 	{
-		if (raceResults.TryGetValue(bracked, out var raceBracked))
+		if (brackets.TryGetValue(brackedId, out var raceBracked))
 		{
-			if (raceBracked.Item2.TryGetValue(pilot.PilotId, out var result))
+			if (raceBracked.PilotResults.TryGetValue(pilot.PilotId, out var result))
 			{
-				return result.LazyRacePilotId.ToString();
-				//return DataUtil.GetTime(result);
+				raceId = result.LazyRaceId;
+				return DataUtil.GetTime(result);
 			}
 		}
+		raceId = null;
 		return string.Empty;
 	}
 }
