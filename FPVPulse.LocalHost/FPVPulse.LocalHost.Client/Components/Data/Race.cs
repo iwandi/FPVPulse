@@ -28,5 +28,7 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 
 		[NotMapped]
 		public RacePilotResult[]? Results { get; set; }
+
+		public bool Invalid { get; set; } = false;
 	}
 }

@@ -42,7 +42,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			using var scope = serviceProvider.CreateScope();
 			var db = scope.ServiceProvider.GetRequiredService<EventDbContext>();
 
-			return db.Races.Where(e => e.EventId == eventId)
+			return db.Races.Where(e => e.EventId == eventId && e.Invalid == false)
 				.OrderBy(e =>
 					e.RaceType == RaceType.Practice ? 0 :
 					e.RaceType == RaceType.Qualifying ? 1 :
@@ -66,7 +66,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			var pilotIndex = (
 				from rp in db.RacePilots
 				join p in db.Pilots on rp.PilotId equals p.PilotId
-				where rp.RaceId == raceId
+				where rp.RaceId == raceId && rp.Invalid == false
 				select new IndexEntry
 				{
 					Id = p.PilotId,
@@ -115,7 +115,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			var pilotIndex = (
 				from rp in db.RacePilots
 				join r in db.Races on rp.RaceId equals r.RaceId
-				where rp.PilotId == pilotId && rp.EventId == eventId
+				where rp.PilotId == pilotId && rp.EventId == eventId && r.Invalid == false
 				select new IndexEntry
 				{
 					Id = r.RaceId,

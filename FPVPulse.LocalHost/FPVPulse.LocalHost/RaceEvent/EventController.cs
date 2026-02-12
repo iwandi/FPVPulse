@@ -66,7 +66,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 		{
 			@event.Shedule = await db.EventShedules.Where( e => e.EventId == @event.EventId).FirstOrDefaultAsync();
 
-			@event.Races = await db.Races.Where(r => r.EventId == @event.EventId).ToArrayAsync();
+			@event.Races = await db.Races.Where(r => r.EventId == @event.EventId && !r.Invalid).ToArrayAsync();
 			foreach(var race in @event.Races)
 			{
 				await RaceController.FillRace(db, race);

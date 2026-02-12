@@ -38,6 +38,8 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 		public ResultFlag? Flags { get; set; }
 
 		public Lap[]? Laps { get; set; }
+
+		public bool Invalid { get; set; } = false;
 	}
 
 	public class Lap

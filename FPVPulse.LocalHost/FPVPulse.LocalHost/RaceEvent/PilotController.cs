@@ -53,7 +53,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			var pilotList = (
 				from pilot in db.Pilots
 				join racePilot in db.RacePilots on pilot.PilotId equals racePilot.PilotId
-				where racePilot.EventId == eventId
+				where racePilot.EventId == eventId && racePilot.Invalid == false
 				select new IndexEntry
 				{
 					Id = pilot.PilotId,
@@ -72,7 +72,7 @@ namespace FPVPulse.LocalHost.RaceEvent
 			var eventList = (
 				from racePilot in db.RacePilots
 				join ev in db.Events on racePilot.EventId equals ev.EventId
-				where racePilot.PilotId == pilotId
+				where racePilot.PilotId == pilotId && racePilot.Invalid == false
 				select new IndexEntry
 				{
 					Id = ev.EventId,

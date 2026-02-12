@@ -33,5 +33,7 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 
 		//[ForeignKey("PilotId")]
 		public Pilot? Pilot { get; set; }
+
+		public bool Invalid { get; set; } = false;
 	}
 }
