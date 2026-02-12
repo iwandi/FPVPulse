@@ -14,6 +14,7 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 
 		public int? LazyRaceId { get; set; }
 		public int? LazyRacePilotId { get; set; }
+		public int? LazyPilotId { get; set; }
 
 		public int? Position { get; set; }
 

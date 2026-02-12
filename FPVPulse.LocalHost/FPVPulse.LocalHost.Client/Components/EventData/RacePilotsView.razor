@@ -35,7 +35,7 @@
 		</tr>
 		@foreach (var racePilot in race.Pilots)
 		{
-			var result = race.Results.Where(e => e.LazyRacePilotId == racePilot.PilotId).FirstOrDefault();
+			var result = race.Results.Where(e => e.LazyRacePilotId == racePilot.RacePilotId).FirstOrDefault();
 			<tr>
 				<td><a href="event/@race.EventId/pilot/@racePilot.PilotId">@racePilot.Pilot?.DisplayName</a></td>
 				<td>@racePilot.Pilot?.CountryAlpha3</td>

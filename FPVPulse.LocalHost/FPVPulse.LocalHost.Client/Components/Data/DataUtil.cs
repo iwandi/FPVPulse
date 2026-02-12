@@ -34,7 +34,7 @@ namespace FPVPulse.LocalHost.Client.Components.Data
 		{
 			if (race != null && race.Results != null && racePilot != null)
 			{
-				var result = race.Results.Where(e => e.LazyRacePilotId == racePilot.PilotId).FirstOrDefault();
+				var result = race.Results.Where(e => e.LazyRacePilotId == racePilot.RacePilotId).FirstOrDefault();
 				return GetTime(result);
 			}
 			return string.Empty;

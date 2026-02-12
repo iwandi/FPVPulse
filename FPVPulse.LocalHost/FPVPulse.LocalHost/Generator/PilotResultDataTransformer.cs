@@ -32,12 +32,12 @@ namespace FPVPulse.LocalHost.Generator
 
 		protected override async Task<bool> Process(EventDbContext db, DbInjestPilotResult data, int id, int parentId)
 		{
-			var getRacePilotId = db.RacePilots.Where(e => e.InjestRacePilotId == id).Select(e => new { e.RaceId, e.PilotId }).FirstOrDefaultAsync();
+			var getRacePilot = db.RacePilots.Where(e => e.InjestRacePilotId == data.RacePilotId).Select( e => new { e.RacePilotId, e.RaceId, e.PilotId }).FirstOrDefaultAsync();
 			var getExistingPilot = db.RacePilotResults.Where(pr => pr.InjestPilotResultId == id).FirstOrDefaultAsync();
 
-			await Task.WhenAll(getRacePilotId, getExistingPilot);
+			await Task.WhenAll(getRacePilot, getExistingPilot);
 
-			var racePilotResult = getRacePilotId.Result;
+			var racePilotResult = getRacePilot.Result;
 			var existingPilotResult = getExistingPilot.Result;
 
 			if(racePilotResult == null)
@@ -46,11 +46,11 @@ namespace FPVPulse.LocalHost.Generator
 			if (existingPilotResult == null)
 			{
 				existingPilotResult = new RacePilotResult { InjestPilotResultId = id };
-				WriteData(existingPilotResult, data, racePilotResult?.RaceId, racePilotResult?.PilotId);
+				WriteData(existingPilotResult, data, racePilotResult?.RaceId, racePilotResult?.RacePilotId, racePilotResult?.PilotId);
 				db.RacePilotResults.Add(existingPilotResult);
 			}
 			else 
-				WriteData(existingPilotResult, data, racePilotResult?.RaceId, racePilotResult?.PilotId);
+				WriteData(existingPilotResult, data, racePilotResult?.RaceId, racePilotResult?.RacePilotId, racePilotResult?.PilotId);
 
 			var dataLapsCount = data.Laps != null ? data.Laps.Length : 0;
 			if (dataLapsCount == 0)
@@ -93,12 +93,14 @@ namespace FPVPulse.LocalHost.Generator
 			return true;
 		}
 
-		void WriteData(RacePilotResult racePilotResult, DbInjestPilotResult injestPilotResult, int? raceId, int? pilotId)
+		void WriteData(RacePilotResult racePilotResult, DbInjestPilotResult injestPilotResult, int? raceId, int? racePilotId, int? pilotId)
 		{
 			if (raceId.HasValue)
 				racePilotResult.LazyRaceId = raceId;
+			if (racePilotId.HasValue)
+				racePilotResult.LazyRacePilotId = racePilotId;
 			if (pilotId.HasValue)
-				racePilotResult.LazyRacePilotId = pilotId;
+				racePilotResult.LazyPilotId = pilotId;
 
 			racePilotResult.Position = injestPilotResult.Position;
 			racePilotResult.CurrentSector = injestPilotResult.CurrentSector;
