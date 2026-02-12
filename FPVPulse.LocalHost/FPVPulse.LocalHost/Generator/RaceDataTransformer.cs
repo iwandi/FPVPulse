@@ -13,8 +13,13 @@ namespace FPVPulse.LocalHost.Generator
 {
 	public class RaceDataTransformer : BaseTransformer<DbInjestRace>
 	{
-		public RaceDataTransformer(ChangeSignaler changeSignaler, IServiceProvider serviceProvider) : base(changeSignaler, serviceProvider)
+		RacePilotDataTransformer racePilotDataTransformer;
+		PilotResultDataTransformer pilotResultDataTransformer;
+
+		public RaceDataTransformer(RacePilotDataTransformer rt, PilotResultDataTransformer prt, ChangeSignaler changeSignaler, IServiceProvider serviceProvider) : base(changeSignaler, serviceProvider)
 		{
+			racePilotDataTransformer = rt;
+			pilotResultDataTransformer = prt;
 		}
 
 		public override void Bind(ChangeSignaler changeSignaler)
@@ -26,10 +31,7 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach (var race in injestDb.Races)
 			{
-				while(!await Process(db, race, race.RaceId, race.EventId.Value))
-				{
-
-				}
+				await ProcessUntilDone(db, race, race.RaceId, race.EventId.Value);
 			}
 		}
 
@@ -56,9 +58,13 @@ namespace FPVPulse.LocalHost.Generator
 
 			var raceHasChanges = await db.SaveChangesAsync() > 0;
 
-			// TODO : Fill Result and Pilots
+			await Task.WhenAll(
+				racePilotDataTransformer.WaitForAllParentsDone(id),
+				pilotResultDataTransformer.WaitForAllParentsDone(id));
 
-			if(raceHasChanges)
+			await EventDbContext.FillRace(db, existingRace);
+
+			if (raceHasChanges)
 				changeSignaler.SignalChangeAsync(ChangeGroup.Race, existingRace.RaceId, existingRace.EventId, existingRace);
 			return true;
 		}

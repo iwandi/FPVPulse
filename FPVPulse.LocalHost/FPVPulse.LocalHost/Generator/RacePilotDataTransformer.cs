@@ -22,10 +22,7 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach (var racePilot in injestDb.RacePilots)
 			{
-				while (!await Process(db, racePilot, racePilot.RacePilotId, racePilot.RaceId))
-				{
-
-				}
+				await ProcessUntilDone(db, racePilot, racePilot.RacePilotId, racePilot.RaceId);
 			}
 		}
 

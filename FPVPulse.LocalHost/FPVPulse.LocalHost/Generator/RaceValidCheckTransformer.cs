@@ -25,10 +25,7 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach (var race in db.Races)
 			{
-				while (!await Process(db, race, race.RaceId, race.EventId))
-				{
-
-				}
+				await ProcessUntilDone(db, race, race.RaceId, race.EventId);
 			}
 		}
 

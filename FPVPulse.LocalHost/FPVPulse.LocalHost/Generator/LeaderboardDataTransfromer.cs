@@ -10,8 +10,11 @@ namespace FPVPulse.LocalHost.Generator
 {
 	public class LeaderboardDataTransfromer : BaseTransformer<DbInjestLeaderboard>
 	{
-		public LeaderboardDataTransfromer(ChangeSignaler changeSignaler, IServiceProvider serviceProvider) : base(changeSignaler, serviceProvider)
+		LeaderboardPilotDataTransformer leaderboardPilotDataTransformer;
+
+		public LeaderboardDataTransfromer(LeaderboardPilotDataTransformer lt, ChangeSignaler changeSignaler, IServiceProvider serviceProvider) : base(changeSignaler, serviceProvider)
 		{
+			leaderboardPilotDataTransformer = lt;
 		}
 
 		public override void Bind(ChangeSignaler changeSignaler)
@@ -23,12 +26,7 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach (var leaderboard in injestDb.Leaderboard)
 			{
-				//InjestData.FillResult(injestDb, leaderboard);
-
-				while(!await Process(db, leaderboard, leaderboard.LeaderboardId, leaderboard.EventId.Value))
-				{
-
-				}
+				await ProcessUntilDone(db, leaderboard, leaderboard.LeaderboardId, leaderboard.EventId.Value);
 			}
 		}
 
@@ -52,9 +50,11 @@ namespace FPVPulse.LocalHost.Generator
 
 			var leaderboardHasChange = await db.SaveChangesAsync() > 0;
 
-			// TODO : fill result 
+			await leaderboardPilotDataTransformer.WaitForAllParentsDone(id);
 
-			if(leaderboardHasChange)
+			await EventDbContext.FillLeaderboard(db, existingLeaderboard);
+
+			if (leaderboardHasChange)
 				await changeSignaler.SignalChangeAsync(ChangeGroup.Leaderboard, existingLeaderboard.LeaderboardId, 0, existingLeaderboard);
 
 			return true;

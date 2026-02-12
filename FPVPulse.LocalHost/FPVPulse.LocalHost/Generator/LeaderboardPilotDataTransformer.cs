@@ -24,10 +24,7 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach (var leaderboardPilot in injestDb.LeaderboardPilots)
 			{
-				while (!await Process(db, leaderboardPilot, leaderboardPilot.LeaderboardPilotId, leaderboardPilot.LeaderboardId))
-				{
-
-				}
+				await ProcessUntilDone(db, leaderboardPilot, leaderboardPilot.LeaderboardPilotId, leaderboardPilot.LeaderboardId);
 			}
 		}
 

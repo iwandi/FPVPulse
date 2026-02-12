@@ -26,10 +26,7 @@ namespace FPVPulse.LocalHost.Generator
 		{
 			foreach(var injestEvent in injestDb.Events)
 			{
-				while(!await Process(db, injestEvent, injestEvent.EventId, 0))
-				{
-
-				}
+				await ProcessUntilDone(db, injestEvent, injestEvent.EventId, 0);
 			}
 		}
 
