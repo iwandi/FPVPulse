@@ -18,6 +18,10 @@
 		</tr>
 		@foreach (var pilot in leaderboard.Pilots)
 		{
+			@if (pilotIdFilter.HasValue && pilot.PilotId != pilotIdFilter.Value)
+			{
+				continue;
+			}
 			<tr>
 				<td>@DataUtil.GetPilotPosition(@pilot)</td>
 				<td><a href="/event/@leaderboard.EventId/pilot/@pilot.PilotId">@DataUtil.GetPilotName(@pilot)</a></td>
@@ -52,6 +56,8 @@
 	public Leaderboard leaderboard { get; set; }
 	[Parameter]
 	public Race[] races { get; set; }
+	[Parameter]
+	public int? pilotIdFilter { get; set; }
 
 	int maxBracket = 0;
 	Dictionary<int, Bracket> brackets = new Dictionary<int, Bracket>();

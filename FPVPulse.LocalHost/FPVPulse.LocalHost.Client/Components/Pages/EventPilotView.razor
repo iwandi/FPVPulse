@@ -2,6 +2,7 @@
 @rendermode InteractiveWebAssembly
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
+@using FPVPulse.Ingest
 @using FPVPulse.LocalHost.Client.Components.Data
 @using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
@@ -15,26 +16,41 @@
 	{
 		<h2>Events</h2>
 		<menu class="menu-container menu-depth-2">
-		@foreach (var entry in events)
-		{
-			<li class="link-element"><a href="/event/@entry.Id">@entry.Name</a></li>
-		}
+			@foreach (var entry in events)
+			{
+				<li class="link-element"><a href="/event/@entry.Id">@entry.Name</a></li>
+			}
 		</menu>
 	}
-	<PilotDetailView pilot=pilot linkToPilot=true/>	
+	<PilotDetailView pilot=pilot linkToPilot=true/>
 	if(raceIndex != null)
 	{
+		if (leaderboardPractice != null)
+		{
+			<h2 class="card-title"><a href="event/@eventId/leaderboard/Practice">Practice</a></h2>
+			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardPractice" races="@races"/>
+		}
+		if (leaderboardQualifying != null)
+		{
+			<h2 class="card-title"><a href="event/@eventId/leaderboard/Qualifying">Qualifying</a></h2>
+			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardQualifying" races="@races"/>
+		}
+		if (leaderboardMain != null)
+		{
+			<h2 class="card-title"><a href="event/@eventId/leaderboard/Main">Main</a></h2>
+			<LeaderboardDetailsView pilotIdFilter="@pilotId" leaderboard="@leaderboardMain" races="@races"/>
+		}
 		<h2 class="card-title">Races</h2><br />
 		<div class="race-complited-container">
-		@foreach(var entry in raceIndex)
-		{
-			@if (races.TryGetValue(entry.Id, out var race))
+			@foreach(var entry in raceIndex)
 			{
-				<div class="float-element">
-					<RaceSummaryView race="@race" />
-				</div>
-			}
-		}	
+				@if (raceLookup.TryGetValue(entry.Id, out var race))
+				{
+					<div class="float-element">
+						<RaceSummaryView race="@race" />
+					</div>
+				}
+			}	
 		</div>
 	}
 }
@@ -51,11 +67,15 @@ else
 
 	Pilot pilot;
 
+	Leaderboard leaderboardPractice;
+	Leaderboard leaderboardQualifying;
+	Leaderboard leaderboardMain;
+
 	IndexEntry[] raceIndex;
-	Dictionary<int, Race> races = new();
+	Dictionary<int, Race> raceLookup = new();
+	Race[] races;
 
 	IndexEntry[] events;
-
 
 	protected override async Task OnAfterRenderAsync(bool firstRender)
 	{
@@ -74,12 +94,35 @@ else
 			{
 				var race = await Http.GetFromJsonAsync<Race>($"api/race/{entry.Id}");
 				if (race != null)
-					races.Add(entry.Id, race);
+				{
+					raceLookup.Add(entry.Id, race);
+				}
 			}
 		}
+		races = raceLookup.Values.ToArray();
 
 		events = await Http.GetFromJsonAsync<IndexEntry[]>($"api/pilot/{pilotId}/eventIndex");
 
+		leaderboardPractice = await SaveLoadLeaderboard(eventId, RaceType.Practice);
+		leaderboardQualifying = await SaveLoadLeaderboard(eventId, RaceType.Qualifying);
+		leaderboardMain = await SaveLoadLeaderboard(eventId, RaceType.Mains);
+
 		StateHasChanged();
+	}
+
+	async Task<Leaderboard?> SaveLoadLeaderboard(int eventId, RaceType raceType)
+	{
+		try
+		{
+			var leaderboard = await Http.GetFromJsonAsync<Leaderboard>($"api/event/{eventId}/leaderboard/{raceType}");
+			return leaderboard;
+		}
+		catch (Exception ex)
+		{
+			var httpEx = ex as System.Net.Http.HttpRequestException;
+			if (httpEx != null && httpEx.StatusCode == System.Net.HttpStatusCode.NotFound)
+				return null;
+			throw ex;
+		}
 	}
 }
