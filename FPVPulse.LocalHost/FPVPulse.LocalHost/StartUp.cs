@@ -42,6 +42,7 @@ namespace FPVPulse.LocalHost
 				builder.Services.AddHostedService<RaceDataTransformer>();
 				builder.Services.AddHostedService<RacePilotDataTransformer>();
 				builder.Services.AddHostedService<PilotResultDataTransformer>();
+                builder.Services.AddHostedService<RaceValidCheckTransformer>();
 
 				builder.Services.AddHttpContextAccessor();
                 builder.Services.AddScoped<HttpClient>(sp =>
