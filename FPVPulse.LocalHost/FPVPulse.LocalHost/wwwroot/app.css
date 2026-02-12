@@ -36,6 +36,90 @@ h1:focus {
 .form-floating > .form-control-plaintext:focus::placeholder, .form-floating > .form-control:focus::placeholder {
     text-align: start;
 }
+:root {
+    --bright: #e6e6e8;
+    --silver-gray: #b3b3b4;
+    --light-gray: #918b8f;
+    --midtone: #566271;
+    --highlight: #b63821;
+    --light-dark: #323644;
+    --dark: #11111c;
+}
+
+a {
+    color: var(--light-dark);
+    text-decoration: none
+}
+
+body {
+    background-color: var(--bright);
+}
+
+tabel {
+    border-spacing:0;
+}
+
+table th {
+    writing-mode: sideways-lr;
+    text-align: start;
+    vertical-align: top;
+    background-color: var(--light-dark);
+    color: var(--bright);
+    margin:0;
+    padding: 7px;
+    padding-top: 12px;
+}
+
+.font-ace {
+    font-family: "Bruno Ace", sans-serif;
+    font-size: 12px;
+    font-style: normal;
+}
+
+.goldman-regular {
+    font-family: "Goldman", sans-serif;
+    font-size: 14px;
+    font-style: normal;
+}
+
+.goldman-bold {
+    font-family: "Goldman", sans-serif;
+    font-size: 14px;
+    font-style: normal;
+}
+
+.play-regular {
+    font-family: "Play", sans-serif;
+    font-size: 14px;
+    font-style: normal;
+}
+
+.play-bold, body {
+    font-family: "Play", sans-serif;
+    font-size: 14px;
+    font-style: normal;
+}
+
+.menu-container {
+    list-style-type: none;
+    margin: 0;
+    padding: 0;
+    overflow: hidden;
+    background-color: var(--dark);
+}
+.menu-container li {
+    float: left;
+}
+.menu-container li a {
+    display: block;
+    color: white;
+    text-align: center;
+    padding: 14px 16px;
+    text-decoration: none;
+}
+    .menu-container li a:hover {
+        background-color: var(--light-dark);
+    }
 
 .race-type-container {
     display: flex;
@@ -66,7 +150,7 @@ h1:focus {
 .leaderboard-float-right {
     position: sticky;
     top: 0;
-    width: 300px;
+    width: 350px;
     height: 0;
     overflow-y: auto;
 }
@@ -76,7 +160,7 @@ h1:focus {
     margin: 2px;
     padding: 5px;
     border-radius: 8px;
-    background-color: lightgray;
+    background-color: var(--silver-gray);
 }
 
 .right-details {

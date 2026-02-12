@@ -7,7 +7,7 @@
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
 
-<h3>Injest Events</h3>
+<h1>Injest Events</h1>
 
 @if(events == null)
 {
@@ -19,16 +19,16 @@ else if (!events.Any())
 }
 else
 {
-	<div class="event-button-list">
-		@foreach (var ev in events)
-		{
-			<button 
-			class="event-btn @(CurrentEventId == ev.Id ? "selected" : "")"
-			@onclick="() => CurrentEventId = ev.Id">
-				@ev.Name
-			</button>
-		}
-	</div>
+	<menu class="menu-container menu-depth-2">
+	@foreach (var ev in events)
+	{
+		<button 
+		class="event-btn @(CurrentEventId == ev.Id ? "selected" : "")"
+		@onclick="() => CurrentEventId = ev.Id">
+			@ev.Name
+		</button>
+	}
+	</menu>
 }
 
 @if (CurrentEventId != null)

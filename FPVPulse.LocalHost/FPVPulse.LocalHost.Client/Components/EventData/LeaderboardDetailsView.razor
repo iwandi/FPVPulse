@@ -28,11 +28,11 @@
 					var time = GetBracketTime(brackedId, pilot, out var raceId);
 					if(raceId.HasValue)
 					{
-						<th><a href="race/@raceId">@time</a></th>
+						<td><a href="race/@raceId">@time</a></td>
 					}
 					else
 					{
-						<th>@time</th>						
+						<td>@time</td>						
 					}
 				}
 			</tr>

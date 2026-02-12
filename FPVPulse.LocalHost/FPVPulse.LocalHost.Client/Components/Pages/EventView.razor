@@ -7,92 +7,89 @@
 @using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
 @inject IJSRuntime JS
-<h3>EventView</h3>
 
 @if (eventData != null)
 {
-	<div class="card mb-3">
-		<div class="card-body">
-			<h5 class="card-title">@eventData.Name</h5>
-		</div>
-		<a href="/event/@eventId/leaderboards">EventLeaderboards</a><br />
-		<a href="/event/@eventId/pilots">EventPilots</a><br />
-		<h5 class="card-title">Pilots</h5>
-		<div class="race-complited-container">
-		@foreach (var pilot in pilots.Values)
+	<h1 class="card-title">@eventData.Name</h1>
+	<menu class="menu-container menu-depth-2">
+			<li class="link-element"><a href="/event/@eventId/leaderboards">Leaderboards</a></li>
+			<li class="link-element"><a href="/event/@eventId/pilots">Pilots</a></li>
+	</menu>
+	<h2 class="card-title"><a href="/event/@eventId/pilots">Pilots</a></h2>
+	<menu class="menu-container menu-depth-2">
+	@foreach (var pilot in pilots.Values)
+	{
+		<li class="link-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></li>
+	}
+	</menu>
+	<h2 class="card-title">Races</h2><br />
+	@if (eventData.Races != null && eventData.Races.Length > 0)
+	{
+		@foreach (var raceGroupRaceType in eventData.Races.OrderBy(e =>
+					e.RaceType == RaceType.Practice ? 0 :
+					e.RaceType == RaceType.Qualifying ? 1 :
+					e.RaceType == RaceType.Mains ? 2 :
+					e.RaceType == RaceType.Unknown ? 3 : 99)
+					.GroupBy(e => e.RaceType))
 		{
-			<div class="float-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></div>
-		}
-		</div>
-		<h5 class="card-title">Races</h5><br />
-		@if (eventData.Races != null && eventData.Races.Length > 0)
-		{
-			@foreach (var raceGroupRaceType in eventData.Races.OrderBy(e =>
-						e.RaceType == RaceType.Practice ? 0 :
-						e.RaceType == RaceType.Qualifying ? 1 :
-						e.RaceType == RaceType.Mains ? 2 :
-						e.RaceType == RaceType.Unknown ? 3 : 99)
-						.GroupBy(e => e.RaceType))
+			<div class="race-type-container">
+			<div class="race-type-container-sub">
+			<div class="brackets-container">
+			<h3>@raceGroupRaceType.Key</h3>
+			@foreach (var brackedGroup in raceGroupRaceType.GroupBy(e => e.FirstOrderPoistion))
 			{
-				<div class="race-type-container">
-				<div class="race-type-container-sub">
-				<div class="brackets-container">
-				<h4>@raceGroupRaceType.Key</h4>
-				@foreach (var brackedGroup in raceGroupRaceType.GroupBy(e => e.FirstOrderPoistion))
+				@if(raceGroupRaceType.Key == RaceType.Qualifying ||
+					raceGroupRaceType.Key == RaceType.Practice)
 				{
-					@if(raceGroupRaceType.Key == RaceType.Qualifying ||
-						raceGroupRaceType.Key == RaceType.Practice)
-					{
-						<h4>Bracket @brackedGroup.Key</h4>
-						<hr>
-					}
-					<div class="race-complited-container">
-					@foreach (var race in brackedGroup.OrderBy(e => e.SecondOrderPosition))
-					{
-						@if (IsCurrentRace(race))
-						{
-							<div class="break-flex float-element">
-								<h3>Current Race</h3>
-								<RaceDetailsView race="@race" linkToRace="true"/>
-							</div>
-						}
-						else if (IsNextRace(race))
-						{
-							<div class="break-flex float-element">
-								<h3>Next Race</h3>
-								<RaceDetailsView race="@race" linkToRace="true"/>	
-							</div>
-						}
-						else if (IsComplied(race))
-						{
-							<div class="float-element">
-								<RaceSummaryView race="@race" />
-							</div>
-						}
-						else
-						{
-							<div class="break-flex float-element">
-								<RaceSummaryView race="@race" />									
-							</div>
-						}
-					}
-					</div>
+					<h4>Bracket @brackedGroup.Key</h4>
+					<hr>
 				}
-				</div>
-				</div>
-				@if (leaderboards.TryGetValue(raceGroupRaceType.Key, out var leaerboard))
+				<div class="race-complited-container">
+				@foreach (var race in brackedGroup.OrderBy(e => e.SecondOrderPosition))
 				{
-					<div class="leaderboard-float-right float-element">
-						<div class="leaderboard-narrow-container">
-							<h4><a href="/leaderboard/@leaerboard.LeaderboardId">@raceGroupRaceType.Key</a></h4>
-							<LeaderboardNarrowView leaderboard="@leaerboard" />
+					@if (IsCurrentRace(race))
+					{
+						<div class="break-flex float-element">
+							<h3>Current Race</h3>
+							<RaceDetailsView race="@race" linkToRace="true"/>
 						</div>
-					</div>
+					}
+					else if (IsNextRace(race))
+					{
+						<div class="break-flex float-element">
+							<h3>Next Race</h3>
+							<RaceDetailsView race="@race" linkToRace="true"/>	
+						</div>
+					}
+					else if (IsComplied(race))
+					{
+						<div class="float-element">
+							<RaceSummaryView race="@race" />
+						</div>
+					}
+					else
+					{
+						<div class="break-flex float-element">
+							<RaceSummaryView race="@race" />									
+						</div>
+					}
 				}
 				</div>
 			}
+			</div>
+			</div>
+			@if (leaderboards.TryGetValue(raceGroupRaceType.Key, out var leaerboard))
+			{
+				<div class="leaderboard-float-right float-element">
+					<div class="leaderboard-narrow-container">
+						<h3><a href="/leaderboard/@leaerboard.LeaderboardId">@raceGroupRaceType.Key</a></h3>
+						<LeaderboardNarrowView leaderboard="@leaerboard" />
+					</div>
+				</div>
+			}
+			</div>
 		}
-	</div>
+	}
 }
 else
 {

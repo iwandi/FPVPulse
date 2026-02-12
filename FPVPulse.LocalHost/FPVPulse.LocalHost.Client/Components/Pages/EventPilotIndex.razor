@@ -5,25 +5,25 @@
 @using FPVPulse.LocalHost.Client.Components.Data
 @using Newtonsoft.Json
 @inject IJSRuntime JS
-<h3>EventPilots</h3>
+<h1>Event Pilots</h1>
 
 @if(index != null&& pilots != null)
 {
 	<a href="/event/@eventId">Back to Event</a>
-	<h5 class="card-title">Pilots</h5>
-	<div class="race-complited-container">
+	<h2 class="card-title">Pilots</h2>
+    <menu class="menu-container menu-depth-2">
 	@foreach (var entry in index)
 	{
 		if (pilots.TryGetValue(@entry.Id, out var pilot))
 		{
-			<div class="float-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></div>
+			<li class="link-element"><a href="/event/@eventId/pilot/@pilot.PilotId">@pilot.DisplayName</a></li>
 		}
 		else
 		{
-			<div class="float-element"><a href="/event/@eventId/pilot/@entry.Id">@entry.Name</a></div>
+			<li class="link-element"><a href="/event/@eventId/pilot/@entry.Id">@entry.Name</a></li>
 		}
 	}
-	</div>
+	</menu>
 }
 else
 {

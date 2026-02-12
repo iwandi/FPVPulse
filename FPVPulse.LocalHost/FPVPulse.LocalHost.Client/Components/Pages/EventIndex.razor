@@ -4,16 +4,16 @@
 @inject HttpClient Http
 @inject NavigationManager NavigationManager
 @inject IJSRuntime JS
-<h3>Events</h3>
+<h1>Events</h1>
 
 @if (index != null)
 {
-	<div class="race-complited-container">
+	<menu class="menu-container menu-depth-2">
 	@foreach (var entry in index)
 	{
-		<div class="float-element"><a href="/event/@entry.Id">@entry.Name</a></div>
+		<li class="link-element"><a href="/event/@entry.Id">@entry.Name</a></li>
 	}
-	</div>
+	</menu>
 }
 else
 {

@@ -6,18 +6,18 @@
 @using FPVPulse.LocalHost.Client.Components.EventData
 @using Newtonsoft.Json
 @inject IJSRuntime JS
-<h3>PilotView</h3>
 
 @if(pilot != null)
 {
+	<h1>@pilot.DisplayName</h1>
 	<a href="/pilots">Back to Pilots</a>
-	<h4>Events</h4>
-	<div class="race-complited-container">
+	<h2>Events</h2>
+	<menu class="menu-container menu-depth-2">
 	@foreach (var entry in events)
 	{
-			<div class="float-element"><a href="/event/@entry.Id">@entry.Name</a></div>
+		<li class="link-element"><a href="/event/@entry.Id">@entry.Name</a></li>
 	}
-	</div>
+	</menu>
 	<PilotDetailView pilot=pilot />
 }
 else
